@@ -1,0 +1,7 @@
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#39d67a}
+.header-left{display:flex;align-items:center;gap:16px}
+.brand{font-weight:700;color:rgb(6, 79, 162);min-width:120px; font-size: large;}
+.header-center{flex:1;display:flex;justify-content:center}
+.header-right{display:flex;align-items:center;gap:12px}
+.home-btn button,.about-btn,.search-btn{background:#0b63f6;color:#fff;padding:12px 24px;border-radius:28px;border:0}
+.actions button.auth{background:#0b63f6;color:#fff;padding:10px 20px;border-radius:20px;border:0}

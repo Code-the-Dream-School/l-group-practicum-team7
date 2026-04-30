@@ -3,10 +3,14 @@ import "./AuthModal.css";
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-export default function AuthModal({ onClose, onAuthed }) {
-  const [mode, setMode] = useState("login");
+export default function AuthModal({ onClose, onAuthed, disableClose=false, initialMode='login' }) {
+  const [mode, setMode] = useState(initialMode);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+
+  React.useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,9 +63,9 @@ export default function AuthModal({ onClose, onAuthed }) {
   };
 
   return (
-    <div className="auth-overlay" onClick={onClose}>
+    <div className="auth-overlay" onClick={() => { if (!disableClose) onClose?.(); }}>
       <div className="auth-card" onClick={(e) => e.stopPropagation()}>
-        <button className="close" onClick={onClose}>X</button>
+        {!disableClose && <button className="close" onClick={onClose}>X</button>}
 
         <div className="auth-header">{mode === "login" ? "Login" : mode === "register" ? "SignUp" : mode === "forgot" ? "Forgot password?" : "Reset password"}</div>
 
