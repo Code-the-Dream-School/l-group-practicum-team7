@@ -5,8 +5,18 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const helloRoutes = require('./routes/hello.routes');
+const entryRoutes = require("./routes/entry.routes");
+const insightsRoutes = require("./routes/insights.routes");
+
+console.log("Connecting to Mongo...");
+const connectMongo = require('./config/db.mongo');
 
 const app = express();
+
+
+
+console.log("Calling connectMongo...");
+connectMongo();
 
 // Security & best‑practice middleware
 app.use(helmet());
@@ -22,6 +32,8 @@ app.use(limiter);
 
 // Routes
 app.use('/api/hello', helloRoutes);
+app.use("/api/entries", entryRoutes);
+app.use("/api/insights", insightsRoutes);
 
 // Root route
 app.get('/', (req, res) => {

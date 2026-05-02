@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css'
+import Insights from "./components/Insights";
 
 function App() {
   const [message, setMessage] = useState('');
@@ -33,6 +34,9 @@ function App() {
           Message from API: <strong>{message}</strong>
         </p>
       )}
+      <hr style={{ margin: "2rem 0" }} />
+
+      <Insights />
     </main>
   );
 }
