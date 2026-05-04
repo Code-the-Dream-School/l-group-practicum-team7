@@ -49,7 +49,7 @@ exports.getInsights = async (req, res) => {
     // today
 
     if (today.stress >= 4) {
-        insights.today.push("stress_high");
+        insights.today.push("High stress detected today.");
     }
 
     if (today.sleepHours <= 5) {
@@ -142,6 +142,18 @@ exports.getInsights = async (req, res) => {
       insights.advanced.push(
         "Insufficient recovery over recent days may impact overall resilience."
       );
+    }
+
+    if (today.stress < 3 && avg7Stress >= 4) {
+        insights.advanced.push(
+            "Stress is improving today compared to your weekly pattern — good recovery sign."
+        );
+    }
+
+    if (today.sleepHours >= 8 && today.stress >= 4) {
+        insights.advanced.push(
+            "Despite good sleep, stress remains high — consider workload or external factors."
+        );
     }
 
     // response
