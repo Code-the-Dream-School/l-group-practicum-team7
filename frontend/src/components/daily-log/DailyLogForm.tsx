@@ -6,12 +6,17 @@ function DailyLogForm({ onSave, onClose }: any) {
   const [sleep, setSleep] = useState(7);
   const [energy, setEnergy] = useState(3);
   const [work, setWork] = useState(3);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    onSave({ stress, mood, sleepHours: sleep, energy, workload: work });
-    onClose();
+    try {
+      await onSave({ stress, mood, sleepHours: sleep, energy, workload: work });
+      onClose();
+    } catch (error) {
+      console.error("Failed to save daily log:", error);
+      setErrorMessage("Failed to save daily log. Please try again.");
+    }
   };
 
   return (
@@ -73,7 +78,7 @@ function DailyLogForm({ onSave, onClose }: any) {
           onChange={(e) => setWork(Number(e.target.value))}
         />
       </div>
-
+      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
       <button type="submit">Save</button>
     </form>
   );
