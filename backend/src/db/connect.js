@@ -1,7 +1,15 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
-const connectDB = (url) => {
-  return mongoose.connect(url)
-}
+const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI;
 
-module.exports = connectDB
+  if (!mongoUri) {
+    throw new Error("MONGO_URI is missing in .env");
+  }
+
+  await mongoose.connect(mongoUri);
+
+  console.log("MongoDB connected");
+};
+
+module.exports = connectDB;

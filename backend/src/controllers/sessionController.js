@@ -14,7 +14,15 @@ const registerDo = async (req, res, next) => {
   }
   try {
     const user = await User.create(req.body);
-    return res.json({ ok: true, user: { email: user.email, id: user._id }, token: user.createJWT() });
+
+  return res.status(201).json({
+    ok: true,
+    user: {
+      email: user.email,
+      id: user._id,
+    },
+    token: user.createJWT(),
+  });
   } catch (e) {
     if (e.code === 11000) return res.status(400).json({ error: "Email already registered" });
     if (e.name === "ValidationError") return res.status(400).json({ error: e.message });
@@ -38,7 +46,7 @@ const logoff = (req, res) => {
 
 const me = (req, res) => {
   if (!req.user) return res.status(401).json({});
-  return res.json({ email: req.user.email, id: req.user._id });
+  return res.json({ email: req.user.email, id: req.user.userId});
 };
 
 module.exports = {

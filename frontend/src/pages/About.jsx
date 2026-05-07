@@ -7,7 +7,7 @@ export default function About() {
       <h1>About the Project</h1>
 
       <p>
-        Burnout App is a proactive wellness companion designed to help users identify early signs of
+        PluseMind is a proactive wellness companion designed to help users identify early signs of
         emotional and physical exhaustion. By monitoring key health indicators—such as stress levels,
         sleep quality, energy, and workload—the application provides data-driven insights to prevent
         burnout before it happens.

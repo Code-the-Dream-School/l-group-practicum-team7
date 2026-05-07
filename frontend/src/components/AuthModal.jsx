@@ -29,6 +29,7 @@ export default function AuthModal({ onClose, onAuthed, disableClose=false, initi
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
@@ -36,6 +37,7 @@ export default function AuthModal({ onClose, onAuthed, disableClose=false, initi
       let me = data.user;
       if (!me && data?.token) {
         me = await fetch(`${API}/api/auth/me`, {
+          credentials: "include",
           headers: { Authorization: `Bearer ${data.token}` },
         }).then((r) => (r.ok ? r.json() : null));
       }
