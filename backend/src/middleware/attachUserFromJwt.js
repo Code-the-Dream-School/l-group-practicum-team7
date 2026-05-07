@@ -5,7 +5,6 @@ const attachUserFromJwt = async (req, res, next) => {
   if (req.user) return next();
 
   const raw = req.headers.authorization || "";
-  console.log("AUTH HEADER:", raw);
 
   if (!raw.startsWith("Bearer ")) return next();
   const token = raw.slice("Bearer ".length).trim();
