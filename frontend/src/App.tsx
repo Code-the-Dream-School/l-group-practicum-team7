@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+<<<<<<< HEAD
 import './App.css'
 
 import AuthModal from './components/AuthModal';
@@ -9,6 +10,18 @@ import EntryForm from './components/EntryForm';
 
 const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
+=======
+import './App.css';
+
+import AuthModal from './components/AuthModal.jsx';
+import Header from './components/Header.jsx';
+import About from './pages/About.jsx';
+import Insights from './components/Insights.tsx';
+import EntryForm from './components/EntryForm.jsx';
+
+const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+
+>>>>>>> 74b93ecaec3ed14181f07bb266098fc4fa349bb7
 type AuthMode = 'login' | 'signup';
 type Route = 'home' | 'about' | 'search' | 'auth';
 
@@ -19,7 +32,11 @@ type User = {
 
 type MeResponse = Record<string, unknown>;
 
+<<<<<<< HEAD
 function App(): React.ReactElement {
+=======
+function App(): JSX.Element {
+>>>>>>> 74b93ecaec3ed14181f07bb266098fc4fa349bb7
   const [checking, setChecking] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
