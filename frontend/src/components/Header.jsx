@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './Header.css';
 
-export default function Header({ user = null, onLogin, onLogout, onNavigate }) {
+export default function Header({ user, onLogin, onLogout, onNavigate }) {
   return (
     <header className="app-header">
       <div className="header-left">
@@ -54,7 +54,7 @@ export default function Header({ user = null, onLogin, onLogout, onNavigate }) {
               <button
                 type="button"
                 className="auth"
-                onClick={() => onLogin('register')}
+                onClick={() => onLogin('signup')}
               >
                 Sign Up
               </button>
@@ -70,12 +70,19 @@ export default function Header({ user = null, onLogin, onLogout, onNavigate }) {
   );
 }
 
+Header.defaultProps = {
+  user: null,
+};
+
 Header.propTypes = {
-  user: PropTypes.shape({
-    email: PropTypes.string,
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    token: PropTypes.string,
-  }),
+  user: PropTypes.oneOfType([
+    PropTypes.shape({
+      email: PropTypes.string,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      token: PropTypes.string,
+    }),
+    PropTypes.oneOf([null]),
+  ]),
   onLogin: PropTypes.func.isRequired,
   onLogout: PropTypes.func.isRequired,
   onNavigate: PropTypes.func.isRequired,

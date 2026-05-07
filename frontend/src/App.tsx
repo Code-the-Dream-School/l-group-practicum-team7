@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import './App.css';
-import AuthModal from './components/AuthModal.jsx';
-import Header from './components/Header.jsx';
-import About from './pages/About.jsx';
-import Insights from './components/Insights.tsx';
-import EntryForm from './components/EntryForm.jsx';
+import './App.css'
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+import AuthModal from './components/AuthModal';
+import Header from './components/Header';
+import About from './pages/About';
+import Insights from './components/Insights';
+import EntryForm from './components/EntryForm';
 
-function App() {
-  const [checking, setChecking] = useState(true);
-  const [user, setUser] = useState(null);
-  const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
-  const [route, setRoute] = useState('home');
-  const [insightsRefreshKey, setInsightsRefreshKey] = useState(0); 
+const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+
+type AuthMode = 'login' | 'signup';
+type Route = 'home' | 'about' | 'search' | 'auth';
+
+type User = {
+  token?: string;
+  [key: string]: unknown;
+};
+
+type MeResponse = Record<string, unknown>;
+
+function App(): React.ReactElement {
+  const [checking, setChecking] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [showAuth, setShowAuth] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [route, setRoute] = useState<Route>('home');
+  const [, setInsightsRefreshKey] = useState<number>(0);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -36,8 +47,7 @@ function App() {
         if (!response.ok) {
           throw new Error('not authed');
         }
-
-        return response.json();
+        return response.json() as Promise<MeResponse>;
       })
       .then((userData) => {
         setUser({ ...userData, token });
@@ -54,7 +64,7 @@ function App() {
       });
   }, []);
 
-  const handleAuthed = (userData) => {
+  const handleAuthed = (userData: User | null): void => {
     setUser(userData);
 
     if (userData?.token) {
@@ -65,13 +75,13 @@ function App() {
     setRoute('home');
   };
 
-  const handleLoginOpen = (mode) => {
+  const handleLoginOpen = (mode?: AuthMode): void => {
     setAuthMode(mode || 'login');
     setShowAuth(true);
     setRoute('auth');
   };
 
-  const handleNavigate = (nextRoute) => {
+  const handleNavigate = (nextRoute: Route): void => {
     if (!user && nextRoute !== 'about') {
       setAuthMode('login');
       setShowAuth(true);
@@ -82,7 +92,7 @@ function App() {
     setRoute(nextRoute);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     localStorage.removeItem('token');
     setUser(null);
     setRoute('auth');
@@ -101,15 +111,15 @@ function App() {
   return (
     <div className="app">
       <Header
-        user={user}
+        user={user ?? undefined}
         onLogin={handleLoginOpen}
         onLogout={handleLogout}
         onNavigate={handleNavigate}
       />
 
       <main className="app-main">
-        {route === 'home' && (
-          user ? (
+        {route === 'home' &&
+          (user ? (
             <>
               <h1>Dashboard</h1>
               <EntryForm
@@ -123,22 +133,14 @@ function App() {
             </>
           ) : (
             <p>Welcome — please log in to continue.</p>
-          )
-        )}
+          ))}
 
         {route === 'about' && <About />}
 
-        {route === 'search' && (
-          user ? (
-            <p>Search page placeholder</p>
-          ) : (
-            <p>Please log in to continue.</p>
-          )
-        )}
+        {route === 'search' &&
+          (user ? <p>Search page placeholder</p> : <p>Please log in to continue.</p>)}
 
-        {route === 'auth' && !user && (
-          <p>Please log in to continue.</p>
-        )}
+        {route === 'auth' && !user && <p>Please log in to continue.</p>}
       </main>
 
       {showAuth && (

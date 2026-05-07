@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 export default function Insights() {
   const [data, setData] = useState<any>(null);
@@ -14,7 +15,7 @@ export default function Insights() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/insights`, {
+    fetch(`${API}/api/insights`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
