@@ -5,7 +5,7 @@ export default function Insights() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/insights")
+    fetch(`${import.meta.env.VITE_API_URL}/api/insights`)
       .then((res) => res.json())
       .then((result) => {
         setData(result);

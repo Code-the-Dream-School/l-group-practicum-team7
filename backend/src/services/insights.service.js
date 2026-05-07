@@ -1,65 +1,131 @@
 const Entry = require("../models/Entry");
 
-// get last N entries
-async function getLastEntries(days = 7) {
-  return await Entry.find()
-    .sort({ date: -1 })
-    .limit(days);
-}
-
-// 1-day insight
-function oneDayInsight(entry) {
-  if (entry.stress >= 4 && entry.energy <= 2) {
-    return "High stress and low energy today — risk of early burnout.";
+function generateInsights(entries) {
+  if (!entries.length) {
+    return {
+      message: "Not enough data yet",
+      insights: {
+        today: [],
+        trend: [],
+        weekly: [],
+        advanced: [],
+      },
+    };
   }
 
-  if (entry.sleepHours < 6) {
-    return "Low sleep detected — recovery needed.";
+  const data = [...entries].reverse();
+
+  const avg = (arr, key) =>
+    arr.reduce((sum, e) => sum + (e[key] || 0), 0) / arr.length;
+
+  const today = data[data.length - 1];
+  const last2 = data.slice(-2);
+  const last7 = data;
+
+  const avg2Stress = avg(last2, "stress");
+  const avg7Stress = avg(last7, "stress");
+  const avg7Energy = avg(last7, "energy");
+  const avg7Burnout = avg(last7, "burnoutScore");
+
+  const insights = {
+    today: [],
+    trend: [],
+    weekly: [],
+    advanced: [],
+  };
+
+  // today
+  if (today.stress >= 4) insights.today.push("High stress detected today.");
+  if (today.sleepHours <= 5) insights.today.push("Low sleep may affect recovery today.");
+  if (today.energy <= 2) insights.today.push("Low energy today — possible fatigue.");
+  if (today.burnoutScore >= 3.5) insights.today.push("High burnout risk today.");
+
+  // trend
+  if (last2.length === 2) {
+    if (last2[1].stress > last2[0].stress)
+      insights.trend.push("Stress is increasing over last 2 days.");
+
+    if (last2[1].burnoutScore > last2[0].burnoutScore)
+      insights.trend.push("Burnout risk is increasing.");
+
+    if (last2[1].stress > last2[0].stress && last2[1].energy < last2[0].energy)
+      insights.trend.push("Stress rising with energy drop → fatigue risk.");
   }
 
-  return "Your daily balance looks stable.";
-}
+  // weekly
+  if (avg7Stress >= 4)
+    insights.weekly.push("Sustained high stress over the week.");
 
-// trend analysis (2–3 days)
-function trendInsight(entries) {
-  if (entries.length < 2) return "Not enough data for trend analysis.";
+  if (avg7Burnout >= 3.5)
+    insights.weekly.push("High burnout risk this week.");
 
-  const stressTrend = entries[0].stress - entries[1].stress;
-  const energyTrend = entries[0].energy - entries[1].energy;
+  if (avg7Stress >= 4 && avg7Energy <= 2.5)
+    insights.weekly.push("Burnout pattern detected.");
 
-  if (stressTrend > 0 && energyTrend < 0) {
-    return "Stress is increasing while energy is dropping — warning trend.";
+  // advanced
+  const highStressLowSleepDays = last7.filter(
+    (e) => e.stress >= 4 && e.sleepHours <= 5
+  ).length;
+
+  if (highStressLowSleepDays >= 3)
+    insights.advanced.push("High stress + low sleep pattern detected.");
+
+  if (last7.length >= 3) {
+    const workloadTrend =
+      last7[last7.length - 1].workload >
+      last7[last7.length - 3].workload;
+
+    const energyDrop =
+      last7[last7.length - 1].energy <
+      last7[last7.length - 3].energy;
+
+    if (workloadTrend && energyDrop) {
+      insights.advanced.push("Energy dropped after high workload period.");
+    }
   }
 
-  if (stressTrend < 0) {
-    return "Stress levels are improving — good progress.";
-  }
+  if (avg7Burnout >= 3 && avg7Energy <= 3)
+    insights.advanced.push("Accumulating burnout risk detected.");
 
-  return "No strong trend detected yet.";
-}
+  const lowRecoveryDays = last7.filter(
+    (e) => e.sleepHours <= 5 && e.energy <= 2
+  ).length;
 
-// 7-day pattern
-function weeklyInsight(entries) {
-  const avgStress =
-    entries.reduce((sum, e) => sum + e.stress, 0) / entries.length;
+  if (lowRecoveryDays >= 2)
+    insights.advanced.push("Low recovery over multiple days.");
 
-  const avgSleep =
-    entries.reduce((sum, e) => sum + e.sleepHours, 0) / entries.length;
+  if (today.stress < 3 && avg7Stress >= 4)
+    insights.advanced.push("Stress improving today — good recovery sign.");
 
-  if (avgStress >= 4 && avgSleep < 6) {
-    return "Sustained high stress + low sleep → high burnout risk.";
-  }
+  if (today.sleepHours >= 8 && today.stress >= 4)
+    insights.advanced.push("High stress despite good sleep.");
 
-  if (avgStress <= 2) {
-    return "Low stress week — good recovery pattern.";
-  }
+  // deduplication
+  const seen = new Set();
+  const clean = (arr) =>
+    arr.filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
 
-  return "Moderate weekly balance.";
+ insights.today = clean(insights.today);
+ insights.trend = clean(insights.trend);
+ insights.weekly = clean(insights.weekly);
+ insights.advanced = clean(insights.advanced);
+
+ return {
+  today,
+  averages: {
+    last2DaysStress: avg2Stress,
+    last7Stress: avg7Stress,
+    last7Energy: avg7Energy,
+    last7Burnout: avg7Burnout,
+  },
+  insights,
+};
 }
 
 module.exports = {
-  getLastEntries,
-  oneDayInsight,
-  trendInsight,
-  weeklyInsight,
+  generateInsights,
 };
