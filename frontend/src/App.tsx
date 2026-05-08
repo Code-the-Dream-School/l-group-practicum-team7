@@ -1,7 +1,6 @@
 import AppHeader from './components/AppHeader';
 import BottomNav from './components/BottomNav';
 import TodayPage from './pages/TodayPage';
-import DailyLog from "./components/daily-log/DailyLog";
 
 import './styles/App.css';
 
@@ -11,7 +10,6 @@ function App() {
       <AppHeader />
       <TodayPage />
       <BottomNav />
-      <DailyLog />
     </div>
   );
 }
