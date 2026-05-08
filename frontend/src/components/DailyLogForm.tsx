@@ -1,6 +1,19 @@
 import { useState } from "react";
 
-function DailyLogForm({ onSave, onClose }: any) {
+interface DailyLogData {
+  stress: number;
+  mood: number;
+  sleepHours: number;
+  energy: number;
+  workload: number;
+}
+
+interface DailyLogFormProps {
+  onSave: (data: DailyLogData) => Promise<void>;
+  onClose: () => void;
+}
+
+function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
   const [stress, setStress] = useState(3);
   const [mood, setMood] = useState(3);
   const [sleep, setSleep] = useState(7);
