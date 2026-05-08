@@ -1,9 +1,13 @@
 require("dotenv").config(); //const authMiddleware = require("./middl
 require("express-async-errors");
+const entryRoutes = require("./routes/entry.routes.js");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+
+const helloRoutes = require("./routes/hello.routes");
 
 const rateLimit = require("express-rate-limit");
 const connectMongo = require("./config/db.mongo");
@@ -29,6 +33,8 @@ app.use("/api/entries", entryRoutes);
 // error handler
 const notFoundMiddleware = require("./middleware/not-found");
 const errorHandlerMiddleware = require("./middleware/error-handler");
+app.use("/api", entryRoutes);
+
 // Root route
 app.get("/", (req, res) => {
   res.send("Backend API is running");
