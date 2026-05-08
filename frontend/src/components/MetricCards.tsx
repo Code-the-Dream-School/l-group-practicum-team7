@@ -14,7 +14,7 @@ function MetricCards({ entry }: MetricCardsProps) {
           <Moon aria-hidden="true" />
           Sleep
         </p>
-        <strong>{formatHours(entry.sleepHours)}</strong>
+        <strong>{entry.sleepHours ? formatHours(entry.sleepHours) : 'No data'}</strong>
         <svg className="mini-chart" aria-hidden="true" viewBox="0 0 260 80">
           <path d="M8 38C60 48 103 58 149 56C194 55 222 47 252 34V74H8Z" />
           <path d="M8 38C60 48 103 58 149 56C194 55 222 47 252 34" />
@@ -26,7 +26,7 @@ function MetricCards({ entry }: MetricCardsProps) {
           <Zap aria-hidden="true" />
           Energy
         </p>
-        <strong>{entry.energy}/5</strong>
+        <strong>{entry.energy ? `${entry.energy}/5` : 'No data'}</strong>
         <svg className="mini-chart" aria-hidden="true" viewBox="0 0 260 80">
           <path d="M8 48C58 62 105 68 151 68C196 67 225 59 252 40V74H8Z" />
           <path d="M8 48C58 62 105 68 151 68C196 67 225 59 252 40" />
