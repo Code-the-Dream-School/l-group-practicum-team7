@@ -550,6 +550,134 @@ a {
   stroke-width: 2.1;
 }
 
+/* buttons variant for mobile nav */
+.bottom-nav button {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  min-width: 0;
+  color: #98a1b1;
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.bottom-nav button.active {
+  color: #5a4fe0;
+}
+
+/* page content styles for History/Profile */
+.page-content {
+  padding: 24px;
+  padding-bottom: 120px;
+}
+
+.page-section {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.page-section h1 {
+  margin: 0 0 8px;
+  font-size: 36px;
+  color: #0f172a;
+}
+
+.page-muted {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.history-list {
+  display: grid;
+  gap: 16px;
+}
+
+.history-card,
+.profile-card {
+  border-radius: 24px;
+  padding: 20px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.history-grid div {
+  padding: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.history-grid span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profile-card-column {
+  display: block;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  background: #5b4ee6;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.profile-card h2 {
+  margin: 0 0 4px;
+  color: #0f172a;
+}
+
+.profile-card p {
+  margin: 0;
+  color: #64748b;
+}
+
+.profile-logout-button {
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 18px;
+  background: #ef4444;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 @media (min-width: 720px) {
   .app-shell {
     padding-bottom: 112px;

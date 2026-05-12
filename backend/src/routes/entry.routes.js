@@ -1,9 +1,24 @@
 const express = require("express");
-const { createEntry } = require("../controllers/entry.controller.js");
-
 const router = express.Router();
 
-// POST /api/entry
-router.post("/entries", createEntry);
+const authApi = require("../middleware/authApi");
+
+const {
+  createEntry,
+  getEntries,
+  getEntryById,
+  updateEntry,
+  deleteEntry,
+} = require("../controllers/entryController");
+
+router.use(authApi);
+
+router.route("/").get(getEntries).post(createEntry);
+
+router
+  .route("/:id")
+  .get(getEntryById)
+  .put(updateEntry)
+  .delete(deleteEntry);
 
 module.exports = router;
