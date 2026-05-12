@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 require("dotenv").config();
 require("express-async-errors");
 
@@ -21,6 +22,16 @@ const attachUserFromJwt = require("./middleware/attachUserFromJwt");
 
 const notFoundMiddleware = require("./middleware/not-found");
 const errorHandlerMiddleware = require("./middleware/error-handler");
+=======
+const entryRoutes = require("./routes/entry.routes.js");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+
+const helloRoutes = require("./routes/hello.routes");
+>>>>>>> 0e47246aae5b353fd2f29d3a8992ba95aed76c9d
 
 const app = express();
 
@@ -56,6 +67,7 @@ app.options('*', cors());
 
 app.use(express.json());
 app.use(morgan("dev"));
+<<<<<<< HEAD
 app.use(xssClean());
 
 app.use(
@@ -71,6 +83,19 @@ passportInit();
 app.use(passport.initialize());
 app.use(attachUserFromJwt);
 
+=======
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+app.use(limiter);
+
+// Routes
+app.use("/api/hello", helloRoutes);
+app.use("/api", entryRoutes);
+
+// Root route
+>>>>>>> 0e47246aae5b353fd2f29d3a8992ba95aed76c9d
 app.get("/", (req, res) => {
   res.send("Backend API is running");
 });

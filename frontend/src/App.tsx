@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import './App.css'
+import React, AppHeader from './components/AppHeader';
+import BottomNav from './components/BottomNav';
+import TodayPage from './pages/TodayPage';
+
+import './styles/App.css';
 
 import AuthModal from './components/AuthModal';
 import Header from './components/Header';
