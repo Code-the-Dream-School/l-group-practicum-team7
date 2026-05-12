@@ -23,8 +23,6 @@ const attachUserFromJwt = async (req, res, next) => {
       name: user.name,
     };
 
-    console.log("REQ USER:", req.user);
-
     return next();
   } catch (err) {
     console.log("attachUserFromJwt error:", err.message);

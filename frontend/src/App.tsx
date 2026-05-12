@@ -1,14 +1,19 @@
-import React, AppHeader from './components/AppHeader';
-import BottomNav from './components/BottomNav';
-import TodayPage from './pages/TodayPage';
-
-import './styles/App.css';
+import React, { useEffect, useState } from 'react';
 
 import AuthModal from './components/AuthModal';
 import Header from './components/Header';
 import About from './pages/About';
 import Insights from './components/Insights';
 import EntryForm from './components/EntryForm';
+
+import AppHeader from './components/AppHeader';
+import BottomNav, { type MobileTab } from './components/BottomNav';
+import TodayPage from './pages/TodayPage';
+import HistoryPage from './pages/HistoryPage';
+import ProfilePage from './pages/ProfilePage';
+
+import './App.css';
+import './styles/App.css';
 
 const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -28,6 +33,7 @@ function App(): React.ReactElement {
   const [showAuth, setShowAuth] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [route, setRoute] = useState<Route>('home');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('today');
   const [, setInsightsRefreshKey] = useState<number>(0);
 
   useEffect(() => {
@@ -50,6 +56,7 @@ function App(): React.ReactElement {
         if (!response.ok) {
           throw new Error('not authed');
         }
+
         return response.json() as Promise<MeResponse>;
       })
       .then((userData) => {
@@ -113,38 +120,60 @@ function App(): React.ReactElement {
 
   return (
     <div className="app">
-      <Header
-        user={user ?? undefined}
-        onLogin={handleLoginOpen}
-        onLogout={handleLogout}
-        onNavigate={handleNavigate}
-      />
+      <section className="app-shell">
+        <AppHeader />
 
-      <main className="app-main">
-        {route === 'home' &&
-          (user ? (
-            <>
-              <h1>Dashboard</h1>
-              <EntryForm
-                onEntryCreated={() => {
-                  setInsightsRefreshKey((prev) => prev + 1);
-                }}
-              />
+        {mobileTab === 'today' && <TodayPage />}
+        {mobileTab === 'history' && <HistoryPage />}
+        {mobileTab === 'profile' && (
+          <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
+        )}
 
-              <hr style={{ margin: '2rem 0' }} />
-              <Insights />
-            </>
-          ) : (
-            <p>Welcome — please log in to continue.</p>
-          ))}
+        <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+      </section>
 
-        {route === 'about' && <About />}
+      <section className="backend-front-section">
+        <h2 className="backend-front-title">&lt;backend front&gt;</h2>
 
-        {route === 'search' &&
-          (user ? <p>Search page placeholder</p> : <p>Please log in to continue.</p>)}
+        <Header
+          user={user ?? undefined}
+          onLogin={handleLoginOpen}
+          onLogout={handleLogout}
+          onNavigate={handleNavigate}
+        />
 
-        {route === 'auth' && !user && <p>Please log in to continue.</p>}
-      </main>
+        <main className="app-main">
+          {route === 'home' &&
+            (user ? (
+              <>
+                <h1>Dashboard</h1>
+
+                <EntryForm
+                  onEntryCreated={() => {
+                    setInsightsRefreshKey((prev) => prev + 1);
+                  }}
+                />
+
+                <hr style={{ margin: '2rem 0' }} />
+
+                <Insights />
+              </>
+            ) : (
+              <p>Welcome — please log in to continue.</p>
+            ))}
+
+          {route === 'about' && <About />}
+
+          {route === 'search' &&
+            (user ? (
+              <p>Search page placeholder</p>
+            ) : (
+              <p>Please log in to continue.</p>
+            ))}
+
+          {route === 'auth' && !user && <p>Please log in to continue.</p>}
+        </main>
+      </section>
 
       {showAuth && (
         <AuthModal
