@@ -1,0 +1,236 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap");
+
+.daily-log-wrapper {
+  --pm-primary: #5b58eb;
+  --pm-primary-hover: #4a47d1;
+  --pm-text-main: #32325d;
+  --pm-text-muted: #94a3b8;
+  --pm-white: #ffffff;
+  --pm-bg-overlay: rgba(15, 23, 42, 0.4);
+
+  font-family: "Nunito", sans-serif;
+  color: var(--pm-text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Overlay blur */
+.daily-log-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--pm-bg-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+/*Log card with internal scroll small screens */
+.daily-log-card {
+  background: var(--pm-white);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  border-radius: 32px;
+  padding: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pmFadeIn 0.3s ease-out;
+}
+
+@media (min-width: 640px) {
+  .daily-log-card {
+    padding: 48px;
+    border-radius: 40px;
+  }
+}
+
+/* form scroll */
+.daily-log-scroll-area {
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-top: 10px;
+  flex: 1;
+}
+
+.daily-log-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+.daily-log-scroll-area::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+@keyframes pmFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.daily-log-title {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 640px) {
+  .daily-log-title {
+    font-size: 36px;
+  }
+}
+
+.daily-log-subtitle {
+  font-size: 14px;
+  color: var(--pm-text-muted);
+  font-weight: 600;
+  margin: 4px 0 24px 0;
+}
+
+.daily-log-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--pm-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.daily-log-close-btn:hover {
+  background: #e2e8f0;
+  transform: rotate(90deg);
+}
+
+.daily-log-field {
+  margin-bottom: 24px;
+}
+
+.daily-log-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.daily-log-label-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.daily-log-value-badge {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--pm-primary);
+  background: #f5f3ff;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.daily-log-slider-input {
+  width: 100%;
+  height: 8px;
+  background: #eef2f6;
+  border-radius: 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.daily-log-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--pm-primary);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 4px 10px rgba(91, 88, 235, 0.3);
+}
+
+.daily-log-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.daily-log-legend span {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--pm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* save- responsive */
+.daily-log-save-button {
+  width: 100%;
+  background-color: var(--pm-primary);
+  color: white;
+  padding: 16px;
+  border-radius: 20px;
+  border: none;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 10px 20px -5px rgba(91, 88, 235, 0.4);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.daily-log-save-button:hover {
+  background-color: var(--pm-primary-hover);
+  transform: translateY(-2px);
+}
+
+.dashboard-open-btn {
+  background-color: var(--pm-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 16px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 15px -3px rgba(91, 88, 235, 0.3);
+  transition: transform 0.2s;
+}
+
+.dashboard-open-btn:active {
+  transform: scale(0.95);
+}
+
+.daily-log-error {
+  background: #fef2f2;
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border: 1px solid #fee2e2;
+  text-align: center;
+}
