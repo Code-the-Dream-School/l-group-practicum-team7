@@ -41,6 +41,12 @@ export default function Header({ user, onLogin, onLogout, onNavigate }) {
         )}
 
         <div className="actions">
+          {user && (
+            <>
+              <button type="button" className="nav" onClick={() => onNavigate('dialogues')}>Dialogues</button>
+              <button type="button" className="nav" onClick={() => onNavigate('tools')}>Tools</button>
+            </>
+          )}
           {!user ? (
             <>
               <button

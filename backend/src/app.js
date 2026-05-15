@@ -15,6 +15,7 @@ const helloRoutes = require("./routes/hello.routes");
 const insightsRoutes = require("./routes/insights.routes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const entryRoutes = require("./routes/entry.routes.js");
+const dialogueRoutes = require("./routes/dialogueRoutes");
 
 const passportInit = require("./passport/passportInit");
 const attachUserFromJwt = require("./middleware/attachUserFromJwt");
@@ -70,16 +71,18 @@ app.use(
 
 passportInit();
 app.use(passport.initialize());
+
+app.use("/api/auth", sessionRoutes);
 app.use(attachUserFromJwt);
 
 app.get("/", (req, res) => {
   res.send("Backend API is running");
 });
 
-app.use("/api/auth", sessionRoutes);
 app.use("/api/hello", helloRoutes);
 app.use("/api/entries", entryRoutes);
 app.use("/api/insights", insightsRoutes);
+app.use("/api/dialogues", dialogueRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

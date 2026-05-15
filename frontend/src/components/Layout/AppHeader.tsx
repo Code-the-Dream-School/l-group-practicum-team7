@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Activity, Plus } from 'lucide-react';
-import DailyLogForm from './DailyLogForm';
+import DailyLogForm from '../Forms/DailyLogForm';
 
 interface DailyLogData {
   stress: number;
