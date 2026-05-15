@@ -5,7 +5,7 @@ import "./DailyLog.css";
 
 interface DailyLogData {
   stress: number;
-  mood: number;
+
   sleepHours: number;
   energy: number;
   workload: number;
@@ -18,7 +18,7 @@ interface DailyLogFormProps {
 
 function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
   const [stress, setStress] = useState(3);
-  const [mood, setMood] = useState(3);
+
   const [sleep, setSleep] = useState(7);
   const [energy, setEnergy] = useState(3);
   const [work, setWork] = useState(3);
@@ -30,7 +30,6 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
     try {
       await onSave({
         stress,
-        mood,
         sleepHours: sleep,
         energy,
         workload: work,
@@ -92,31 +91,6 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
             <div className="daily-log-field">
               <div className="daily-log-field-header">
                 <div className="daily-log-label-container">
-                  <Smile size={18} />
-                  <span>Mood</span>
-                </div>
-
-                <span className="daily-log-value-badge">{mood}</span>
-              </div>
-
-              <input
-                className="daily-log-slider-input"
-                type="range"
-                min="1"
-                max="5"
-                value={mood}
-                onChange={(e) => setMood(Number(e.target.value))}
-              />
-
-              <div className="daily-log-legend">
-                <span>Sad</span>
-                <span>Happy</span>
-              </div>
-            </div>
-
-            <div className="daily-log-field">
-              <div className="daily-log-field-header">
-                <div className="daily-log-label-container">
                   <Moon size={18} />
                   <span>Sleep Hours</span>
                 </div>
@@ -134,8 +108,8 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
               />
 
               <div className="daily-log-legend">
-                <span>Poor</span>
-                <span>Optimal</span>
+                <span>Less Sleep</span>
+                <span>More Sleep</span>
               </div>
             </div>
 
