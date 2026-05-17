@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-import AuthModal from './components/AuthModal';
-import Header from './components/Header';
-import About from './pages/About';
-import Insights from './components/Insights';
-import EntryForm from './components/EntryForm';
+import AuthModal from "./components/AuthModal";
+import Header from "./components/Header";
+import About from "./pages/About";
+import Insights from "./components/Insights";
+import EntryForm from "./components/EntryForm";
 
-import AppHeader from './components/AppHeader';
-import BottomNav, { type MobileTab } from './components/BottomNav';
-import TodayPage from './pages/TodayPage';
-import HistoryPage from './pages/HistoryPage';
-import ProfilePage from './pages/ProfilePage';
+import AppHeader from "./components/AppHeader";
+import BottomNav, { type MobileTab } from "./components/BottomNav";
+import TodayPage from "./pages/TodayPage";
+import HistoryPage from "./pages/HistoryPage";
+import ProfilePage from "./pages/ProfilePage";
 
-import './App.css';
-import './styles/App.css';
+import "./App.css";
+import "./styles/App.css";
 
-const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = 'login' | 'signup';
-type Route = 'home' | 'about' | 'search' | 'auth';
+type AuthMode = "login" | "signup";
+type Route = "home" | "about" | "search" | "auth";
 
 type User = {
   token?: string;
@@ -31,18 +31,18 @@ function App(): React.ReactElement {
   const [checking, setChecking] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [route, setRoute] = useState<Route>('home');
-  const [mobileTab, setMobileTab] = useState<MobileTab>('today');
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [route, setRoute] = useState<Route>("home");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     if (!token) {
       setChecking(false);
-      setRoute('auth');
-      setAuthMode('login');
+      setRoute("auth");
+      setAuthMode("login");
       setShowAuth(true);
       return;
     }
@@ -54,19 +54,19 @@ function App(): React.ReactElement {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error('not authed');
+          throw new Error("not authed");
         }
 
         return response.json() as Promise<MeResponse>;
       })
       .then((userData) => {
         setUser({ ...userData, token });
-        setRoute('home');
+        setRoute("home");
       })
       .catch(() => {
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
         setUser(null);
-        setRoute('auth');
+        setRoute("auth");
         setShowAuth(true);
       })
       .finally(() => {
@@ -78,24 +78,24 @@ function App(): React.ReactElement {
     setUser(userData);
 
     if (userData?.token) {
-      localStorage.setItem('token', userData.token);
+      localStorage.setItem("token", userData.token);
     }
 
     setShowAuth(false);
-    setRoute('home');
+    setRoute("home");
   };
 
   const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode || 'login');
+    setAuthMode(mode || "login");
     setShowAuth(true);
-    setRoute('auth');
+    setRoute("auth");
   };
 
   const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== 'about') {
-      setAuthMode('login');
+    if (!user && nextRoute !== "about") {
+      setAuthMode("login");
       setShowAuth(true);
-      setRoute('auth');
+      setRoute("auth");
       return;
     }
 
@@ -103,10 +103,10 @@ function App(): React.ReactElement {
   };
 
   const handleLogout = (): void => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
-    setRoute('auth');
-    setAuthMode('login');
+    setRoute("auth");
+    setAuthMode("login");
     setShowAuth(true);
   };
 
@@ -123,9 +123,9 @@ function App(): React.ReactElement {
       <section className="app-shell">
         <AppHeader />
 
-        {mobileTab === 'today' && <TodayPage />}
-        {mobileTab === 'history' && <HistoryPage />}
-        {mobileTab === 'profile' && (
+        {mobileTab === "today" && <TodayPage />}
+        {mobileTab === "history" && <HistoryPage />}
+        {mobileTab === "profile" && (
           <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
         )}
 
@@ -143,7 +143,7 @@ function App(): React.ReactElement {
         />
 
         <main className="app-main">
-          {route === 'home' &&
+          {route === "home" &&
             (user ? (
               <>
                 <h1>Dashboard</h1>
@@ -154,7 +154,7 @@ function App(): React.ReactElement {
                   }}
                 />
 
-                <hr style={{ margin: '2rem 0' }} />
+                <hr style={{ margin: "2rem 0" }} />
 
                 <Insights />
               </>
@@ -162,16 +162,16 @@ function App(): React.ReactElement {
               <p>Welcome — please log in to continue.</p>
             ))}
 
-          {route === 'about' && <About />}
+          {route === "about" && <About />}
 
-          {route === 'search' &&
+          {route === "search" &&
             (user ? (
               <p>Search page placeholder</p>
             ) : (
               <p>Please log in to continue.</p>
             ))}
 
-          {route === 'auth' && !user && <p>Please log in to continue.</p>}
+          {route === "auth" && !user && <p>Please log in to continue.</p>}
         </main>
       </section>
 
