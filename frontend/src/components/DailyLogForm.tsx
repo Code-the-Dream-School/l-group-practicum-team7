@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Moon, Zap, Smile, Briefcase, X } from "lucide-react";
+import { AlertTriangle, Moon, Zap, Briefcase, X } from "lucide-react";
 
 import "./DailyLog.css";
 
