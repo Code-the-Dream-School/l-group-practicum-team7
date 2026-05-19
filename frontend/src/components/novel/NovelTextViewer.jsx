@@ -14,56 +14,43 @@ export default function NovelTextViewer({
   const [showingInsight, setShowingInsight] = useState(false);
 
   useEffect(() => {
-  if (!flowId) return;
-
-  if (insightLines.length > 0) {
-    setIntroInsight({
-      id: 'insight_intro',
-      speaker: 'Mascot',
-      text: `Before we choose a tool, I noticed this:\n\n${insightLines[0]}`,
-    });
-
-    setShowingInsight(true);
-    setNode(null);
-    return;
-  }
-
-  const nextNode = dialogueEngine.startDialogue(flowId);
-  setNode(nextNode);
-  setShowingInsight(false);
-}, [flowId, insightLines]);
-
-  useEffect(() => {
     if (!flowId) return;
 
-    if (insightLines.length > 0) {
-      const randomInsight =
-        insightLines[Math.floor(Math.random() * insightLines.length)];
+    setNode(null);
+    setIntroInsight(null);
+    setShowingInsight(false);
 
+    if (insightLines.length > 0) {
       setIntroInsight({
-        id: 'insight_intro',
-        speaker: 'Mascot',
-        text: `Before we choose a tool, I noticed this:\n\n${randomInsight}`,
+        id: "insight_intro",
+        speaker: "Mascot",
+        text: `Before we choose a tool, I noticed this:\n\n${insightLines[0]}`,
       });
 
       setShowingInsight(true);
-      setNode(null);
       return;
     }
 
     const nextNode = dialogueEngine.startDialogue(flowId);
-    setNode(nextNode);
-    setShowingInsight(false);
+    setNode(nextNode || dialogueEngine.getCurrentNode());
   }, [flowId, insightLines]);
-  
+
+  const startDialogueAfterInsight = () => {
+    const nextNode = dialogueEngine.startDialogue(flowId);
+
+    setNode(nextNode || dialogueEngine.getCurrentNode());
+    setShowingInsight(false);
+    setIntroInsight(null);
+  };
+
   const handleNext = () => {
     const nextNode = dialogueEngine.goNext();
-    setNode(nextNode);
+    setNode(nextNode || dialogueEngine.getCurrentNode());
   };
 
   const handleChoice = (choiceId) => {
     const nextNode = dialogueEngine.chooseOption(choiceId);
-    setNode(nextNode);
+    setNode(nextNode || dialogueEngine.getCurrentNode());
   };
 
   if (showingInsight && introInsight) {
@@ -78,14 +65,7 @@ export default function NovelTextViewer({
           </div>
 
           <div className="novel-actions">
-            <button
-              className="btn-primary"
-              onClick={() => {
-                const nextNode = dialogueEngine.startDialogue(flowId);
-                setNode(nextNode);
-                setShowingInsight(false);
-              }}
-            >
+            <button className="btn-primary" onClick={startDialogueAfterInsight}>
               Continue
             </button>
 

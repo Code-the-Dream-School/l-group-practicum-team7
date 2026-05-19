@@ -4,6 +4,7 @@ const {
   getUnlockedToolsForUser,
   unlockToolForUser,
 } = require("../services/dialogueService");
+const UserTool = require("../models/UserTool");
 
 function getUserId(req) {
   return req.user?.userId || req.user?.id || req.user?._id || req.userId;
@@ -45,6 +46,23 @@ async function getUnlockedTools(req, res) {
   });
 }
 
+async function resetUnlockedTools(req, res) {
+  const userId = req.user?.userId || req.user?.id || req.user?._id || req.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      message: "Authentication required",
+    });
+  }
+
+  await UserTool.deleteMany({ userId });
+
+  return res.status(200).json({
+    message: "Unlocked tools reset",
+    tools: [],
+  });
+}
+
 async function unlockTool(req, res) {
   const userId = getUserId(req);
 
@@ -66,4 +84,5 @@ module.exports = {
   getAvailableDialogues,
   getUnlockedTools,
   unlockTool,
+  resetUnlockedTools,
 };

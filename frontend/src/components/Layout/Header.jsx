@@ -9,7 +9,7 @@ export default function Header({ user, onLogin, onLogout, onNavigate }) {
         <div className="brand">pulseMind</div>
 
         <div className="home-btn">
-          <button type="button" onClick={() => onNavigate('home')}>
+          <button type="button" onClick={() => onNavigate('backend')}>
             Home
           </button>
         </div>

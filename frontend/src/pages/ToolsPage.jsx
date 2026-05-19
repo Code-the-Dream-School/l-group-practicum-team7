@@ -185,6 +185,8 @@ async function loadUnlocked() {
 
   function resetUnlockedTools() {
     localStorage.removeItem('unlockedTools');
+    localStorage.removeItem('dialogueState_v1');
+    localStorage.removeItem('seenNodes');
 
     Object.keys(localStorage)
       .filter((key) => key.startsWith('tool:') && key.endsWith(':entries'))
@@ -202,6 +204,8 @@ async function loadUnlocked() {
       new CustomEvent('dialogueStateUpdate', {
         detail: {
           unlockedTools: [],
+          dialogueState: null,
+          seenNodes: {},
         },
       })
     );
