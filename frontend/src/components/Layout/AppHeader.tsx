@@ -13,28 +13,42 @@ interface DailyLogData {
 function AppHeader() {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
 
-  const handleSave = async (data: DailyLogData) => {
-    try {
-      console.log("Send to backend:", data);
-      const response = await fetch("http://localhost:8080/api/entries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+ const handleSave = async (data: DailyLogData) => {
+    const token = localStorage.getItem('token');
 
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to save daily log");
-      }
-      console.log("Response from backend:", result);
-      return result;
-    } catch (error) {
-      console.error("Error sending data to backend:", error);
-      throw error;
+    if (!token) {
+      throw new Error('No auth token found. Please log in again.');
     }
+
+    const payload = {
+      stress: data.stress,
+      sleepHours: data.sleepHours,
+      energy: data.energy,
+      workload: data.workload,
+    };
+
+    console.log('Send to backend:', payload);
+
+    const response = await fetch(`http://localhost:8080/api/entries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(result?.message || result?.error || 'Failed to save daily log');
+    }
+
+    console.log('Response from backend:', result);
+
+    return result;
   };
+
 
   return (
     <>

@@ -72,8 +72,8 @@ app.use(
 passportInit();
 app.use(passport.initialize());
 
-app.use("/api/auth", sessionRoutes);
 app.use(attachUserFromJwt);
+app.use("/api/auth", sessionRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend API is running");
