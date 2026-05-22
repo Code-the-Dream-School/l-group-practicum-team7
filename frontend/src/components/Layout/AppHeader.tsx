@@ -14,17 +14,19 @@ interface DailyLogData {
 function AppHeader() {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
 
-  const handleSave = async (data: DailyLogData) => {
-    try {
-      console.log("Send to backend:", data);
-      const response = await fetch(`${API}/api/entries`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+const handleSave = async (data: DailyLogData) => {
+  try {
+    console.log("Send to backend:", data);
+
+    const response = await fetch(`${API}/api/entries`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
 
     if (!response.ok) {
       throw new Error(result?.message || "Failed to save daily log");
@@ -35,11 +37,15 @@ function AppHeader() {
     window.dispatchEvent(
       new CustomEvent("entries.updated", {
         detail: { entry: result },
-      }),
+      })
     );
 
     return result;
-  };
+
+  } catch (error) {
+    console.error("Error saving daily log:", error);
+  }
+};
 
   return (
     <>
