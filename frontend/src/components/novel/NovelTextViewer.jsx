@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import dialogueEngine from "../../assets/novel/text/dialogueEngine";
 import mascotImage from "../../assets/novel/graphics/miyuri_d_pryamo.png";
 import "./NovelTextViewer.css";
+import loggia from "../../assets/novel/graphics/loggia day.png";
 
 export default function NovelTextViewer({
   flowId,
@@ -74,6 +75,7 @@ export default function NovelTextViewer({
     return (
       <div className="novel-root">
         <div className="novel-scene">
+          <img className="novel-bg" src={loggia} alt="Background" />
           <img className="novel-character" src={mascotImage} alt="Mascot" />
 
           <div className="speech-bubble">
