@@ -1,7 +1,9 @@
-import dialogueFlows from "../data/dialogueFlows";
+import dialogueFlows from "./dialogueFlows";
 
 const STORAGE_KEY = "dialogueState_v1";
 const UNLOCKED_TOOLS_KEY = "unlockedTools";
+// const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE;
 
 let state = {
   flowId: null,
@@ -26,23 +28,6 @@ function load() {
   }
 }
 
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-
-  window.dispatchEvent(
-    new CustomEvent("dialogueStateUpdate", {
-      detail: {
-        dialogueState: state,
-        unlockedTools: getUnlockedTools(),
-      },
-    })
-  );
-
-  if (onUpdate) {
-    onUpdate(state);
-  }
-}
-
 function getUnlockedTools() {
   try {
     return JSON.parse(localStorage.getItem(UNLOCKED_TOOLS_KEY) || "[]");
@@ -53,6 +38,31 @@ function getUnlockedTools() {
 
 function saveUnlockedTools(tools) {
   localStorage.setItem(UNLOCKED_TOOLS_KEY, JSON.stringify(tools));
+}
+
+async function syncUnlockedToolToBackend(tool) {
+  const token = localStorage.getItem("token");
+
+  if (!token || !tool?.key) {
+    return;
+  }
+
+  try {
+    await fetch(`${API}/api/dialogues/tools/unlock`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        key: tool.key,
+        title: tool.title || tool.key,
+        sourceDialogue: state.flowId,
+      }),
+    });
+  } catch (e) {
+    console.warn("Could not sync unlocked tool to backend", e);
+  }
 }
 
 function unlockTool(tool) {
@@ -66,13 +76,39 @@ function unlockTool(tool) {
   });
 
   if (!alreadyUnlocked) {
-    tools.push({
+    const nextTool = {
       key: tool.key,
-      title: tool.title,
+      title: tool.title || tool.key,
+      sourceDialogue: state.flowId,
       unlockedAt: new Date().toISOString(),
-    });
+    };
 
+    tools.push(nextTool);
     saveUnlockedTools(tools);
+    syncUnlockedToolToBackend(nextTool);
+
+    window.dispatchEvent(
+      new CustomEvent("toolUnlocked", {
+        detail: nextTool,
+      })
+    );
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+  window.dispatchEvent(
+    new CustomEvent("dialogueStateUpdate", {
+      detail: {
+        dialogueState: state,
+        unlockedTools: getUnlockedTools(),
+      },
+    })
+  );
+
+  if (typeof onUpdate === "function") {
+    onUpdate(state);
   }
 }
 
@@ -143,7 +179,7 @@ export function startDialogue(flowId) {
 
   if (!flow) {
     console.error(`Dialogue flow not found: ${flowId}`);
-    return;
+    return null;
   }
 
   state = {
@@ -162,13 +198,13 @@ export function getCurrentNode() {
 
 export function chooseOption(choiceId) {
   const flow = getCurrentFlow();
-  if (!flow) return;
+  if (!flow) return null;
 
   const node = flow.nodes[state.nodeId];
-  if (!node?.choices) return;
+  if (!node?.choices) return null;
 
   const choice = node.choices.find((item) => item.id === choiceId);
-  if (!choice) return;
+  if (!choice) return null;
 
   state.nodeId = choice.next;
   save();
@@ -178,10 +214,10 @@ export function chooseOption(choiceId) {
 
 export function goNext() {
   const flow = getCurrentFlow();
-  if (!flow) return;
+  if (!flow) return null;
 
   const node = flow.nodes[state.nodeId];
-  if (!node?.next) return;
+  if (!node?.next) return null;
 
   state.nodeId = node.next;
   save();
@@ -209,3 +245,4 @@ export default {
   resetDialogueProgress,
   setOnUpdate,
 };
+

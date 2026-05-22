@@ -9,7 +9,7 @@ export default function Header({ user, onLogin, onLogout, onNavigate }) {
         <div className="brand">pulseMind</div>
 
         <div className="home-btn">
-          <button type="button" onClick={() => onNavigate('home')}>
+          <button type="button" onClick={() => onNavigate('backend')}>
             Home
           </button>
         </div>
@@ -41,6 +41,12 @@ export default function Header({ user, onLogin, onLogout, onNavigate }) {
         )}
 
         <div className="actions">
+          {user && (
+            <>
+              <button type="button" className="nav" onClick={() => onNavigate('dialogues')}>Dialogues</button>
+              <button type="button" className="nav" onClick={() => onNavigate('tools')}>Tools</button>
+            </>
+          )}
           {!user ? (
             <>
               <button

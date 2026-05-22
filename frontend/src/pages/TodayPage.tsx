@@ -1,7 +1,7 @@
-import MetricCards from '../components/MetricCards';
-import RecommendedActions from '../components/RecommendedActions';
-import RiskSummaryCard from '../components/RiskSummaryCard';
-import WeeklyTrendsChart from '../components/WeeklyTrendsChart';
+import MetricCards from '../components/dashboard/MetricCards';
+import RecommendedActions from '../components/dashboard/RecommendedActions';
+import RiskSummaryCard from '../components/dashboard/RiskSummaryCard';
+import WeeklyTrendsChart from '../components/dashboard/WeeklyTrendsChart';
 import { mockEntryInputs } from '../services/mockEntries';
 import { buildEntry, getRecommendations } from '../utils/wellness';
 

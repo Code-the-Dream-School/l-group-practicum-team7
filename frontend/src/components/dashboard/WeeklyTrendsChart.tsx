@@ -1,6 +1,6 @@
 import { ChevronDown, TrendingUp } from 'lucide-react';
-import type { TrendPoint } from '../types/wellness';
-import { chartHeight, chartWidth, getChartPosition, pointsFor } from '../utils/chart';
+import type { TrendPoint } from '../../types/wellness';
+import { chartHeight, chartWidth, getChartPosition, pointsFor } from '../../utils/chart';
 
 type WeeklyTrendsChartProps = {
   trendData: TrendPoint[];

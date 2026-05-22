@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Activity, Plus } from "lucide-react";
-import DailyLogForm from "./DailyLogForm";
+import { useState } from 'react';
+import { Activity, Plus } from 'lucide-react';
+import DailyLogForm from '../Forms/DailyLogForm';
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE;
 
 interface DailyLogData {
   stress: number;
@@ -15,24 +15,16 @@ function AppHeader() {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
 
   const handleSave = async (data: DailyLogData) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("No auth token found");
-    }
-
-    console.log("Send to backend:", data);
-
-    const response = await fetch(`${API}/api/entries`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
-
-    const result = await response.json().catch(() => null);
+    try {
+      console.log("Send to backend:", data);
+      const response = await fetch(`${API}/api/entries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
 
     if (!response.ok) {
       throw new Error(result?.message || "Failed to save daily log");
