@@ -17,7 +17,9 @@ import ProfilePage from './pages/ProfilePage';
 import './App.css';
 import './styles/App.css';
 
-const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+// const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+
+const API: string = import.meta.env.VITE_API_BASE as string;
 
 type AuthMode = 'login' | 'signup';
 

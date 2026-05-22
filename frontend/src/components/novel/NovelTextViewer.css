@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@400;600;700&display=swap');
+
 .novel-root {
   width: 100%;
   display: flex;
@@ -12,60 +14,76 @@
   box-sizing: border-box;
 }
 
+/* =========================
+   MAIN CARD (UPDATED)
+========================= */
 .dialogue-select-card {
   width: min(100%, 760px);
   margin: 0 auto 24px;
-  padding: 28px;
-  border-radius: 28px;
-  background: #ffffff;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+  padding: 30px;
+  border-radius: 26px;
+
+  background: linear-gradient(135deg, #53a2b5 0%, #f4d8e3 100%);
+  border: 1px solid rgba(44, 35, 143, 0.15);
+
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+
   box-sizing: border-box;
+  font-family: "Inter", sans-serif;
 }
 
+/* =========================
+   HEADER TEXTS (UPDATED)
+========================= */
 .dialogue-kicker {
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 0 0 10px;
+  font-size: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   font-weight: 900;
-  color: #5b4ee6;
+  color: #cd2d2d;
 }
 
 .dialogue-select-card h2 {
-  margin: 0 0 8px;
-  color: #0f172a;
-  font-size: 32px;
+  margin: 0 0 10px;
+  color: #3b060d;
+  font-size: 30px;
   line-height: 1.1;
+
+  font-family: "Poppins", "Inter", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .dialogue-muted {
-  color: #64748b;
-  margin: 0 0 20px;
-  line-height: 1.5;
+  color: #100f0f;
+  margin: 0 0 22px;
+  line-height: 1.6;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.problem-list {
-  display: grid;
-  gap: 10px;
+/* =========================
+   INSIGHT CARD
+========================= */
+.mascot-insight-card {
   margin: 18px 0;
-}
-
-.problem-chip {
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: #f1f5f9;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: #1cc27a;
+  border: 1px solid #bae6fd;
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
-.problem-chip strong {
-  color: #0f172a;
-  text-transform: capitalize;
+.mascot-insight-card strong {
+  color: #c81d1d;
+  font-size: 24px;
 }
 
-.problem-chip span {
-  color: #64748b;
-  line-height: 1.4;
+.mascot-insight-card span {
+  color: #0e0f0e;
+  line-height: 1.45;
 }
 
 .dialogue-options {
@@ -80,7 +98,7 @@
   border: 0;
   border-radius: 22px;
   padding: 18px 20px;
-  background: #eef2ff;
+  background: #1cc27a;
   cursor: pointer;
   display: grid;
   gap: 6px;
@@ -93,16 +111,17 @@
 }
 
 .dialogue-option-title {
-  color: #0f172a;
-  font-size: 18px;
+  color: #c42a2a;
+  font-size: 22px;
   font-weight: 900;
 }
 
 .dialogue-option-reason {
-  color: #64748b;
+  color: #0d0d0e;
   font-size: 15px;
   line-height: 1.4;
 }
+
 
 .dialogue-error {
   padding: 16px;
@@ -120,43 +139,6 @@
   margin-top: 16px;
 }
 
-.mascot-insight-card {
-  margin: 18px 0;
-  padding: 16px 18px;
-  border-radius: 22px;
-  background: #ecfeff;
-  border: 1px solid #bae6fd;
-  display: grid;
-  gap: 6px;
-}
-
-.mascot-insight-card strong {
-  color: #0f172a;
-}
-
-.mascot-insight-card span {
-  color: #475569;
-  line-height: 1.45;
-}
-
-@media (max-width: 720px) {
-  .novel-page {
-    padding: 16px 10px;
-  }
-
-  .dialogue-select-card {
-    padding: 20px;
-    border-radius: 24px;
-  }
-
-  .dialogue-select-card h2 {
-    font-size: 26px;
-  }
-
-  .dialogue-option-card {
-    padding: 16px;
-  }
-}
 
 .novel-scene {
   position: relative;
@@ -201,10 +183,13 @@
   width: min(calc(100% - 36px), 500px);
   padding: 14px 18px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  color: #0f172a;
+  font-size: 30px;
+  font-weight: 600;
+  background: rgba(95, 241, 105, 0.96);
+  color: #1910cb;
   z-index: 3;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  box-shadow: 0 14px 32px rgba(64, 68, 77, 0.16);
+  
 }
 
 .speech-bubble::after {
@@ -215,13 +200,13 @@
   transform: translateX(-50%);
   border-width: 14px 12px 0 12px;
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.96) transparent transparent transparent;
+  border-color: rgba(203, 181, 181, 0.96) transparent transparent transparent;
 }
 
 .speaker {
-  font-size: 12px;
+  font-size: 24px;
   font-weight: 800;
-  color: #5b4ee6;
+  color: #e10f1d;
   margin-bottom: 6px;
 }
 
@@ -230,6 +215,7 @@
   line-height: 1.45;
   white-space: pre-line;
 }
+
 
 .novel-actions {
   position: absolute;
@@ -274,7 +260,25 @@
   color: #5b4ee6;
 }
 
+
 @media (max-width: 720px) {
+  .novel-page {
+    padding: 16px 10px;
+  }
+
+  .dialogue-select-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .dialogue-select-card h2 {
+    font-size: 26px;
+  }
+
+  .dialogue-option-card {
+    padding: 16px;
+  }
+
   .novel-root {
     padding: 14px 8px;
   }

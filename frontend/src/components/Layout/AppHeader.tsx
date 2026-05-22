@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Activity, Plus } from 'lucide-react';
 import DailyLogForm from '../Forms/DailyLogForm';
 
+const API = import.meta.env.VITE_API_BASE;
+
 interface DailyLogData {
   stress: number;
   mood: number;
@@ -16,7 +18,7 @@ function AppHeader() {
   const handleSave = async (data: DailyLogData) => {
     try {
       console.log("Send to backend:", data);
-      const response = await fetch("http://localhost:8080/api/entries", {
+      const response = await fetch(`${API}/api/entries`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -2,7 +2,8 @@ import dialogueFlows from "./dialogueFlows";
 
 const STORAGE_KEY = "dialogueState_v1";
 const UNLOCKED_TOOLS_KEY = "unlockedTools";
-const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+// const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE;
 
 let state = {
   flowId: null,
@@ -85,6 +86,12 @@ function unlockTool(tool) {
     tools.push(nextTool);
     saveUnlockedTools(tools);
     syncUnlockedToolToBackend(nextTool);
+
+    window.dispatchEvent(
+      new CustomEvent("toolUnlocked", {
+        detail: nextTool,
+      })
+    );
   }
 }
 
