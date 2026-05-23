@@ -11,6 +11,7 @@ import BottomNav, { type MobileTab } from "./components/BottomNav";
 import TodayPage from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+import ToolsPage from "./pages/ToolsPage";
 
 import "./App.css";
 import "./styles/App.css";
@@ -18,7 +19,7 @@ import "./styles/App.css";
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 type AuthMode = "login" | "signup";
-type Route = "home" | "about" | "search" | "auth";
+type Route = "home" | "about" | "search" | "auth" | "tools";
 
 type User = {
   token?: string;
@@ -35,6 +36,14 @@ function App(): React.ReactElement {
   const [route, setRoute] = useState<Route>("home");
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
+
+  const [unlockedTools, setUnlockedTools] = useState<string[]>([]);
+  const [showTools, setShowTools] = useState(false);
+
+  const handleOpenTools = (tools: string[]): void => {
+    setUnlockedTools(tools);
+    setShowTools(true);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -148,6 +157,17 @@ function App(): React.ReactElement {
               <>
                 <h1>Dashboard</h1>
 
+                <button
+                  onClick={() =>
+                    handleOpenTools([
+                      "breathing",
+                      "grounding",
+                      "three-good-things",
+                    ])
+                  }
+                >
+                  Open Tools
+                </button>
                 <EntryForm
                   onEntryCreated={() => {
                     setInsightsRefreshKey((prev) => prev + 1);
@@ -170,7 +190,12 @@ function App(): React.ReactElement {
             ) : (
               <p>Please log in to continue.</p>
             ))}
-
+          {showTools && (
+            <ToolsPage
+              unlockedTools={unlockedTools}
+              onClose={() => setShowTools(false)}
+            />
+          )}
           {route === "auth" && !user && <p>Please log in to continue.</p>}
         </main>
       </section>
