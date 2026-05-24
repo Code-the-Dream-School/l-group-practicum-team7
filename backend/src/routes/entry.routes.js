@@ -9,7 +9,7 @@ const {
   getEntryById,
   updateEntry,
   deleteEntry,
-} = require("../controllers/entry.controller");
+} = require("../controllers/entryController");
 
 router.use(authApi);
 
