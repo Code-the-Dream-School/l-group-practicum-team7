@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import NovelTextViewer from '../components/novel/NovelTextViewer';
 import dialogueFlows from '../assets/novel/text/dialogueFlows';
-import dialogueEngine from '../assets/novel/text/dialogueEngine';
 import '../components/novel/NovelTextViewer.css';
 
-// const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-
-const API = import.meta.env.VITE_API_BASE;
+const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
 function uniqueById(items) {
   const map = new Map();
@@ -128,15 +125,6 @@ export default function NovelPage() {
         <NovelTextViewer
           flowId={flowId}
           insightLines={insightLines}
-          currentNode={dialogueEngine.getCurrentNode()}
-          onNext={() => {
-            const node = dialogueEngine.goNext();
-            return node;
-          }}
-          onChoose={(choiceId) => {
-            const node = dialogueEngine.chooseOption(choiceId);
-            return node;
-          }}
           onBack={() => setFlowId(null)}
           onDialogueFinished={() => {
             setFlowId(null);
@@ -151,7 +139,7 @@ export default function NovelPage() {
   return (
     <div className="novel-page">
       <div className="dialogue-select-card">
-        <p className="dialogue-kicker">Today's focus</p>
+        <p className="dialogue-kicker">Recommended dialogues</p>
 
         <h2>What should we work on?</h2>
 
@@ -192,10 +180,7 @@ export default function NovelPage() {
                 type="button"
                 key={flow.id}
                 className="dialogue-option-card"
-                onClick={() => {
-                dialogueEngine.startDialogue(flow.id);
-                setFlowId(flow.id);
-              }}
+                onClick={() => setFlowId(flow.id)}
               >
                 <span className="dialogue-option-title">{flow.title}</span>
 

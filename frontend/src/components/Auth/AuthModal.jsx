@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import "./AuthModal.css";
 
-// const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
-const API = import.meta.env.VITE_API_BASE;
+const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 export default function AuthModal({ onClose, onAuthed, disableClose=false, initialMode='login' }) {
   const [mode, setMode] = useState(initialMode);

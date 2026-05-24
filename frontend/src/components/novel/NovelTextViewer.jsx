@@ -13,17 +13,6 @@ export default function NovelTextViewer({
   const [introInsight, setIntroInsight] = useState(null);
   const [showingInsight, setShowingInsight] = useState(false);
 
-  // engine subscription
-  useEffect(() => {
-    dialogueEngine.setOnUpdate(() => {
-      setNode(dialogueEngine.getCurrentNode());
-    });
-
-    return () => {
-      dialogueEngine.setOnUpdate(null);
-    };
-  }, []);
-
   useEffect(() => {
     if (!flowId) return;
 
@@ -47,12 +36,7 @@ export default function NovelTextViewer({
   }, [flowId, insightLines]);
 
   const startDialogueAfterInsight = () => {
-    console.log("FLOW ID:", flowId);
-
     const nextNode = dialogueEngine.startDialogue(flowId);
-
-    console.log("START RESULT:", nextNode);
-    console.log("CURRENT NODE:", dialogueEngine.getCurrentNode());
 
     setNode(nextNode || dialogueEngine.getCurrentNode());
     setShowingInsight(false);
@@ -69,7 +53,6 @@ export default function NovelTextViewer({
     setNode(nextNode || dialogueEngine.getCurrentNode());
   };
 
-  
   if (showingInsight && introInsight) {
     return (
       <div className="novel-root">
@@ -95,7 +78,6 @@ export default function NovelTextViewer({
     );
   }
 
-  
   if (!node) {
     return null;
   }
@@ -146,12 +128,23 @@ export default function NovelTextViewer({
 
               <button
                 className="btn-secondary"
-                onClick={onDialogueFinished}
+                onClick={() => {
+                  if (onDialogueFinished) {
+                    onDialogueFinished();
+                  }
+                }}
               >
                 Next dialogue
               </button>
 
-              <button className="btn-secondary" onClick={onBack}>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                  }
+                }}
+              >
                 Back
               </button>
             </div>

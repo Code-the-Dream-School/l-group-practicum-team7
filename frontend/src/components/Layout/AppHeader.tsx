@@ -18,7 +18,7 @@ function AppHeader() {
   const handleSave = async (data: DailyLogData) => {
     try {
       console.log("Send to backend:", data);
-      const response = await fetch(`${API}/api/entries`, {
+      const response = await fetch("http://localhost:8080/api/entries", {        
         method: "POST",
         headers: {
           "Content-Type": "application/json",

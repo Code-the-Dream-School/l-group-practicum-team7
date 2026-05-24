@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import toolDefinitions from '../assets/tools/toolDefinitions';
 import TOOLS_TEXT from '../assets/tools/tools.txt?raw';
 
-const API = import.meta.env.VITE_API_BASE;
+const API = import.meta.env.VITE_API_BASE|| 'http://localhost:8080';
 
 function parseToolsTxt(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n').trim();
