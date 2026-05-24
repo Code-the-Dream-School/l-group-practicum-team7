@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 import AuthModal from './components/Auth/AuthModal';
 import Header from './components/Layout/Header';
@@ -14,10 +14,10 @@ import TodayPage from './pages/TodayPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 
-import './App.css';
-import './styles/App.css';
+import "./App.css";
+import "./styles/App.css";
 
-const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 type AuthMode = 'login' | 'signup';
 
@@ -122,7 +122,7 @@ function App(): React.ReactElement {
     setUser(userData);
 
     if (userData?.token) {
-      localStorage.setItem('token', userData.token);
+      localStorage.setItem("token", userData.token);
     }
 
     setShowAuth(false);
@@ -136,7 +136,7 @@ function App(): React.ReactElement {
   };
 
   const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode || 'login');
+    setAuthMode(mode || "login");
     setShowAuth(true);
     setRoute('auth');
   };
@@ -193,9 +193,9 @@ function App(): React.ReactElement {
       <section className="app-shell">
         <AppHeader />
 
-        {mobileTab === 'today' && <TodayPage />}
-        {mobileTab === 'history' && <HistoryPage />}
-        {mobileTab === 'profile' && (
+        {mobileTab === "today" && <TodayPage />}
+        {mobileTab === "history" && <HistoryPage />}
+        {mobileTab === "profile" && (
           <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
         )}
 
@@ -236,7 +236,7 @@ function App(): React.ReactElement {
                   }}
                 />
 
-                <hr style={{ margin: '2rem 0' }} />
+                <hr style={{ margin: "2rem 0" }} />
 
                 <Insights />
               </>
@@ -250,16 +250,16 @@ function App(): React.ReactElement {
           {route === 'tools' &&
             (user ? <ToolsPage /> : <p>Please log in to continue.</p>)}
 
-          {route === 'about' && <About />}
+          {route === "about" && <About />}
 
-          {route === 'search' &&
+          {route === "search" &&
             (user ? (
               <p>Search page placeholder</p>
             ) : (
               <p>Please log in to continue.</p>
             ))}
 
-          {route === 'auth' && !user && <p>Please log in to continue.</p>}
+          {route === "auth" && !user && <p>Please log in to continue.</p>}
         </main>
       </section>
 
