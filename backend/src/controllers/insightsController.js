@@ -1,4 +1,4 @@
-const { generateInsights } = require("../services/insights.service");
+const { generateInsights } = require("../services/insightsService");
 
 exports.getInsights = async (req, res) => {
   try {
