@@ -158,7 +158,7 @@
 .novel-character {
   position: absolute;
   left: 50%;
-  bottom: 52px;
+  bottom: 28px;
   transform: translateX(-50%);
   height: 380px;
   width: auto;
@@ -169,19 +169,19 @@
 
 .speech-bubble {
   position: absolute;
-  top: 18px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(calc(100% - 36px), 500px);
-  padding: 14px 18px;
+  width: min(calc(100% - 80px), 420px);
+
+  padding: 10px 14px;
   border-radius: 18px;
-  font-size: 30px;
-  font-weight: 600;
+
   background: rgba(252, 253, 252, 0.96);
   color: #131314;
+
   z-index: 3;
   box-shadow: 0 14px 32px rgba(64, 68, 77, 0.16);
-  
 }
 
 .speech-bubble::after {
@@ -190,9 +190,15 @@
   left: 50%;
   bottom: -14px;
   transform: translateX(-50%);
+
   border-width: 14px 12px 0 12px;
   border-style: solid;
-  border-color: rgba(203, 181, 181, 0.96) transparent transparent transparent;
+
+  border-color:
+    rgba(252, 253, 252, 0.96)
+    transparent
+    transparent
+    transparent;
 }
 
 .speaker {
@@ -201,6 +207,7 @@
   color: #5b38da;
   margin-bottom: 6px;
 }
+
 
 .content {
   font-size: 14px;
@@ -283,7 +290,7 @@
 
   .novel-character {
     height: 330px;
-    bottom: 54px;
+    bottom: 30px;
   }
 
   .speech-bubble {

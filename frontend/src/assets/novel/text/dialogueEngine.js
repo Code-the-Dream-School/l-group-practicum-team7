@@ -193,7 +193,23 @@ export function startDialogue(flowId) {
 }
 
 export function getCurrentNode() {
-  return processCurrentNode();
+  const flow = getCurrentFlow();
+
+  if (!flow) {
+    return {
+      id: "empty",
+      speaker: "Mascot",
+      text: "No dialogue selected yet.",
+      choices: [],
+    };
+  }
+
+  return flow.nodes[state.nodeId] || {
+    id: "missing",
+    speaker: "Mascot",
+    text: "Dialogue node was not found.",
+    choices: [],
+  };
 }
 
 export function chooseOption(choiceId) {
