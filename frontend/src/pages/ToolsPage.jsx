@@ -1,176 +1,175 @@
 import React, { useEffect, useState } from 'react';
+import {
+  Wind,
+  Brain,
+  Moon,
+  Briefcase,
+  HeartHandshake,
+  ListChecks,
+  PenLine,
+  Sparkles,
+} from 'lucide-react';
+
 import toolDefinitions from '../assets/tools/toolDefinitions';
-import TOOLS_TEXT from '../assets/tools/tools.txt?raw';
+import './ToolsPage.css';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
-function parseToolsTxt(raw) {
-  const text = String(raw || '').replace(/\r\n/g, '\n').trim();
+const toolIcons = {
+  breathing: Wind,
+  grounding: Brain,
+  thought_dump: PenLine,
+  over_responsibility: Briefcase,
+  strategic_refusal: HeartHandshake,
+  prioritization: ListChecks,
+  asking_for_support: HeartHandshake,
+  future_me_letter: PenLine,
+  five_minute_pause: Sparkles,
+  five_minute_task: ListChecks,
+  evening_release: Moon,
+  letter_to_tomorrow_me: PenLine,
+  tomorrow_list: ListChecks,
+  light_mode: Sparkles,
+  body_reset: HeartHandshake,
+  future_sentence: PenLine,
+  three_good_things: Sparkles,
+};
 
-  const re =
-    /^([^\n]+)\n\nInstruction:\n([\s\S]*?)\n\nSample entry:\n([\s\S]*?)(?=\n\n[^\n]+\n\nInstruction:|\n?$)/gm;
+function getToolType(definition) {
+  if (!definition) return 'textarea';
+  if (definition.type) return definition.type;
+  if (definition.fields) return 'fields';
+  if (definition.options) return 'priority';
+  if (definition.durationSeconds) return 'timer';
 
-  const map = {};
-  let m;
-
-  while ((m = re.exec(text)) !== null) {
-    const title = (m[1] || '').trim();
-    const instruction = (m[2] || '').trim();
-    const sample = (m[3] || '').trim();
-
-    const key = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_|_$/g, '');
-
-    map[key] = { title, instruction, sample };
-  }
-
-  return map;
+  return 'textarea';
 }
 
-function resetUnlockedTools() {
-  localStorage.removeItem('unlockedTools');
+function getToolPreview(definition) {
+  const text =
+    definition?.instruction ||
+    definition?.description ||
+    definition?.sample ||
+    '';
 
-  Object.keys(localStorage)
-    .filter((key) => key.startsWith('tool:') && key.endsWith(':entries'))
-    .forEach((key) => localStorage.removeItem(key));
-
-  setUnlocked([]);
-  setActiveTool(null);
-  setModalOpen(false);
-  setTimerRunning(false);
-  setTimerSec(0);
-  setTextValue('');
-  setHistoryEntries([]);
-
-  window.dispatchEvent(
-    new CustomEvent('dialogueStateUpdate', {
-      detail: {
-        unlockedTools: [],
-      },
-    })
-  );
+  return text.slice(0, 180);
 }
 
-function unlockAllTools() {
-  const allTools = Object.keys(toolDefinitions).map((key) => ({
-    key,
-    title: toolDefinitions[key]?.name || key,
-    unlockedAt: new Date().toISOString(),
-  }));
-
-  localStorage.setItem('unlockedTools', JSON.stringify(allTools));
-  setUnlocked(allTools.map((tool) => tool.key));
-
-  window.dispatchEvent(
-    new CustomEvent('dialogueStateUpdate', {
-      detail: {
-        unlockedTools: allTools,
-      },
-    })
-  );
-}
-
-function getLocalUnlockedKeys() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('unlockedTools') || '[]');
-
-    return raw
-      .map((item) => {
-        if (typeof item === 'string') return item;
-        return item && item.key ? item.key : null;
-      })
-      .filter(Boolean);
-  } catch (e) {
+function extractUnlockedToolIds(raw) {
+  if (!Array.isArray(raw)) {
     return [];
   }
+
+  return Array.from(
+    new Set(
+      raw
+        .map((item) => {
+          if (typeof item === 'string') return item;
+          return item?.key || item?.id || null;
+        })
+        .filter((id) => id && toolDefinitions[id])
+    )
+  );
+}
+
+function createPriorityRows(definition) {
+  const rowsCount = definition?.rows || 3;
+  const urgency = definition?.options?.urgency?.[1]?.value || 'not urgent';
+  const importance = definition?.options?.importance?.[0]?.value || 'important';
+
+  return Array.from({ length: rowsCount }, () => ({
+    task: '',
+    urgency,
+    importance,
+  }));
+}
+
+function formatTimer(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function getHistoryKey(toolId) {
+  return `tool:${toolId}:entries`;
 }
 
 export default function ToolsPage() {
   const [unlocked, setUnlocked] = useState([]);
-  const [toolMap] = useState(() => parseToolsTxt(TOOLS_TEXT));
-  const [activeTool, setActiveTool] = useState(null);
+  const [activeToolId, setActiveToolId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [timerSec, setTimerSec] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [textValue, setTextValue] = useState('');
+  const [fieldValues, setFieldValues] = useState({});
+  const [priorityRows, setPriorityRows] = useState([]);
   const [historyEntries, setHistoryEntries] = useState([]);
-
-  const activeDefinition = activeTool ? toolDefinitions[activeTool] : null;
-  const activeInfo = activeTool ? toolMap[activeTool] || {} : {};
-  const activeInstruction =
-    activeInfo.instruction || activeDefinition?.instruction || activeDefinition?.description || '';
-  const activeSample = activeInfo.sample || 'Sample text';
+  const [savedMessage, setSavedMessage] = useState('');
+  const activeDefinition = activeToolId ? toolDefinitions[activeToolId] : null;
+  const activeType = getToolType(activeDefinition);
+  const activeInstruction = activeDefinition?.instruction || '';
+  const activeSample =
+    activeDefinition?.sample || 'Write your reflection here...';
 
   useEffect(() => {
     let mounted = true;
 
-async function loadUnlocked() {
-    let localKeys = [];
+    async function loadUnlocked() {
+      let localKeys = [];
 
-    try {
-      const raw = JSON.parse(localStorage.getItem('unlockedTools') || '[]');
+      try {
+        const raw = JSON.parse(localStorage.getItem('unlockedTools') || '[]');
+        localKeys = extractUnlockedToolIds(raw);
 
-      localKeys = raw
-        .map((item) => {
-          if (typeof item === 'string') return item;
-          return item && item.key ? item.key : null;
-        })
-        .filter(Boolean);
-
-      if (mounted) {
-        setUnlocked(localKeys);
+        if (mounted) {
+          setUnlocked(localKeys);
+        }
+      } catch (e) {
+        localKeys = [];
       }
-    } catch (e) {
-      localKeys = [];
-    }
 
-    const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token');
 
-    if (!token) {
-      return;
-    }
-
-    try {
-      const resp = await fetch(`${API}/api/dialogues/tools`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!resp.ok) {
+      if (!token) {
         return;
       }
 
-      const data = await resp.json();
+      try {
+        const resp = await fetch(`${API}/api/dialogues/tools`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      const backendKeys = Array.isArray(data.tools)
-        ? data.tools.map((tool) => (tool && tool.key ? tool.key : null)).filter(Boolean)
-        : [];
+        if (!resp.ok) {
+          return;
+        }
 
-      const mergedKeys = Array.from(new Set([...localKeys, ...backendKeys]));
+        const data = await resp.json();
+        const backendRaw = Array.isArray(data?.tools)
+          ? data.tools
+          : Array.isArray(data?.unlockedTools)
+            ? data.unlockedTools
+            : [];
 
-      if (mounted) {
-        setUnlocked(mergedKeys);
-      }
-    } catch (e) {}
-  }
+        const backendKeys = extractUnlockedToolIds(backendRaw);
+        const mergedKeys = Array.from(new Set([...localKeys, ...backendKeys]));
+
+        if (mounted) {
+          setUnlocked(mergedKeys);
+        }
+      } catch (e) {}
+    }
 
     loadUnlocked();
 
     const handler = (e) => {
       try {
         const raw =
-          e?.detail?.unlockedTools || JSON.parse(localStorage.getItem('unlockedTools') || '[]');
+          e?.detail?.unlockedTools ||
+          JSON.parse(localStorage.getItem('unlockedTools') || '[]');
 
-        const keys = raw
-          .map((item) => {
-            if (typeof item === 'string') return item;
-            return item && item.key ? item.key : null;
-          })
-          .filter(Boolean);
-
-        setUnlocked(keys);
-      } catch (_) {
+        setUnlocked(extractUnlockedToolIds(raw));
+      } catch (e) {
         setUnlocked([]);
       }
     };
@@ -183,6 +182,78 @@ async function loadUnlocked() {
     };
   }, []);
 
+  useEffect(() => {
+    let timerId = null;
+
+    if (timerRunning && timerSec > 0) {
+      timerId = window.setInterval(() => {
+        setTimerSec((current) => current - 1);
+      }, 1000);
+    }
+
+    if (timerRunning && timerSec <= 0) {
+      setTimerRunning(false);
+    }
+
+    return () => {
+      if (timerId) {
+        window.clearInterval(timerId);
+      }
+    };
+  }, [timerRunning, timerSec]);
+
+  function loadHistory(toolId) {
+    try {
+      return JSON.parse(localStorage.getItem(getHistoryKey(toolId)) || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntry(toolId, payload) {
+    const key = getHistoryKey(toolId);
+    const currentEntries = loadHistory(toolId);
+    const nextEntries = [
+      ...currentEntries,
+      { ...payload, savedAt: new Date().toISOString() },
+    ];
+
+    localStorage.setItem(key, JSON.stringify(nextEntries));
+    setHistoryEntries(nextEntries);
+  }
+
+  function openToolModal(toolId) {
+    const definition = toolDefinitions[toolId];
+
+    if (!definition) {
+      return;
+    }
+
+    const type = getToolType(definition);
+    const initialFieldValues = {};
+
+    if (Array.isArray(definition.fields)) {
+      definition.fields.forEach((field) => {
+        initialFieldValues[field.key] = '';
+      });
+    }
+
+    setActiveToolId(toolId);
+    setModalOpen(true);
+    setTimerRunning(false);
+    setTimerSec(type === 'timer' ? definition.durationSeconds || 60 : 0);
+    setTextValue('');
+    setFieldValues(initialFieldValues);
+    setPriorityRows(type === 'priority' ? createPriorityRows(definition) : []);
+    setHistoryEntries(loadHistory(toolId));
+    setSavedMessage('');
+  }
+
+  function closeToolModal() {
+    setModalOpen(false);
+    setTimerRunning(false);
+  }
+
   function resetUnlockedTools() {
     localStorage.removeItem('unlockedTools');
     localStorage.removeItem('dialogueState_v1');
@@ -193,11 +264,13 @@ async function loadUnlocked() {
       .forEach((key) => localStorage.removeItem(key));
 
     setUnlocked([]);
-    setActiveTool(null);
+    setActiveToolId(null);
     setModalOpen(false);
     setTimerRunning(false);
     setTimerSec(0);
     setTextValue('');
+    setFieldValues({});
+    setPriorityRows([]);
     setHistoryEntries([]);
 
     window.dispatchEvent(
@@ -212,9 +285,9 @@ async function loadUnlocked() {
   }
 
   function unlockAllTools() {
-    const allTools = Object.keys(toolDefinitions).map((key) => ({
-      key,
-      title: toolDefinitions[key]?.name || key,
+    const allTools = Object.values(toolDefinitions).map((tool) => ({
+      key: tool.id,
+      title: tool.name,
       unlockedAt: new Date().toISOString(),
     }));
 
@@ -230,236 +303,386 @@ async function loadUnlocked() {
     );
   }
 
-  function loadHistory(toolId) {
-    const key = `tool:${toolId}:entries`;
+  function updateFieldValue(key, value) {
+    setFieldValues((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
 
-    try {
-      return JSON.parse(localStorage.getItem(key) || '[]');
-    } catch (e) {
-      return [];
+  function updatePriorityRow(index, key, value) {
+    setPriorityRows((currentRows) =>
+      currentRows.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, [key]: value } : row
+      )
+    );
+  }
+
+  function buildFieldsText() {
+    return (activeDefinition?.fields || [])
+      .map((field) => {
+        const value = fieldValues[field.key]?.trim();
+
+        if (!value) {
+          return '';
+        }
+
+        const prefix = field.prefix || field.label || field.key;
+
+        return `${prefix} ${value}`.trim();
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  function buildPriorityText() {
+    return priorityRows
+      .map((row, index) => {
+        if (!row.task.trim()) {
+          return '';
+        }
+
+        return `Task ${index + 1}: ${row.task.trim()} — ${row.urgency}, ${row.importance}.`;
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  function buildEntryText() {
+    if (activeType === 'fields') {
+      return buildFieldsText();
     }
-  }
 
-  function saveEntry(toolId, payload) {
-    const key = `tool:${toolId}:entries`;
-    const arr = JSON.parse(localStorage.getItem(key) || '[]');
-
-    arr.push({ ...payload, savedAt: new Date().toISOString() });
-    localStorage.setItem(key, JSON.stringify(arr));
-    setHistoryEntries(arr);
-  }
-
-  function openToolModal(toolKey) {
-    setActiveTool(toolKey);
-    setModalOpen(true);
-    setTextValue('');
-    setTimerRunning(false);
-    setTimerSec(0);
-    setHistoryEntries(loadHistory(toolKey));
-  }
-
-  useEffect(() => {
-    let t = null;
-
-    if (timerRunning && timerSec > 0) {
-      t = setInterval(() => setTimerSec((s) => s - 1), 1000);
-    } else if (timerRunning && timerSec === 0) {
-      setTimerRunning(false);
+    if (activeType === 'priority') {
+      return buildPriorityText();
     }
 
-    return () => clearInterval(t);
-  }, [timerRunning, timerSec]);
+    return textValue.trim();
+  }
 
-  const startTimerForInstruction = (instruction) => {
-    const m = instruction.match(/(\d+)\s*minute/i);
-    const mins = m ? parseInt(m[1], 10) : 5;
+  function saveCurrentToolEntry() {
+    if (!activeToolId || !activeDefinition) {
+      return;
+    }
 
-    setTimerSec(mins * 60);
+    if (activeType === 'timer') {
+      saveEntry(activeToolId, {
+        note: `Completed timer: ${activeInstruction}`,
+      });
+    } else {
+      saveEntry(activeToolId, {
+        text: buildEntryText() || activeSample,
+      });
+    }
+
+    setSavedMessage('Saved');
+
+    window.setTimeout(() => {
+      setSavedMessage('');
+    }, 1600);
+  }
+
+  function startTimer() {
+    const duration = activeDefinition?.durationSeconds || 60;
+
+    if (timerSec <= 0) {
+      setTimerSec(duration);
+    }
+
     setTimerRunning(true);
-  };
+  }
+
+  function renderHistory() {
+    return (
+      <div className="tool-history-section">
+        <h3>History</h3>
+
+        <div className="tool-history-list">
+          {historyEntries.length === 0 ? (
+            <div className="tool-history-empty">No entries yet.</div>
+          ) : (
+            historyEntries.map((entry, index) => (
+              <div
+                key={`${entry.savedAt || 'entry'}-${index}`}
+                className="tool-history-item"
+              >
+                <div>{entry.savedAt}</div>
+                <p>{entry.text || entry.note}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function renderFieldsInput() {
+    return (
+      <div className="tool-structured-fields">
+        {(activeDefinition?.fields || []).map((field) => (
+          <label className="tool-structured-field" key={field.key}>
+            <span>{field.label}</span>
+
+            <input
+              value={fieldValues[field.key] || ''}
+              placeholder={field.placeholder}
+              onChange={(e) => updateFieldValue(field.key, e.target.value)}
+            />
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  function renderPriorityInput() {
+    const urgencyOptions = activeDefinition?.options?.urgency || [
+      { value: 'urgent', label: 'Urgent' },
+      { value: 'not urgent', label: 'Not urgent' },
+    ];
+
+    const importanceOptions = activeDefinition?.options?.importance || [
+      { value: 'important', label: 'Important' },
+      { value: 'not important', label: 'Not important' },
+    ];
+
+    return (
+      <div className="tool-priority-fields">
+        {priorityRows.map((row, index) => (
+          <div className="tool-priority-row" key={index}>
+            <input
+              value={row.task}
+              placeholder={`Task ${index + 1}`}
+              onChange={(e) =>
+                updatePriorityRow(index, 'task', e.target.value)
+              }
+            />
+
+            <select
+              value={row.urgency}
+              onChange={(e) =>
+                updatePriorityRow(index, 'urgency', e.target.value)
+              }
+            >
+              {urgencyOptions.map((option) => (
+                <option value={option.value} key={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={row.importance}
+              onChange={(e) =>
+                updatePriorityRow(index, 'importance', e.target.value)
+              }
+            >
+              {importanceOptions.map((option) => (
+                <option value={option.value} key={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderWritingInput() {
+    if (activeType === 'fields') {
+      return renderFieldsInput();
+    }
+
+    if (activeType === 'priority') {
+      return renderPriorityInput();
+    }
+
+    return (
+      <textarea
+        className="tool-textarea"
+        placeholder={activeSample}
+        value={textValue}
+        onChange={(e) => setTextValue(e.target.value)}
+      />
+    );
+  }
+
+  function renderTimerView() {
+    return (
+      <div className="tool-breathing-view">
+        <div className="tool-experience-heading">
+          <h2>Guided {activeDefinition?.name || activeToolId}</h2>
+          <p>Use this short reset to slow down and regain focus.</p>
+        </div>
+
+        <div className={`breathing-orb ${timerRunning ? 'is-running' : ''}`}>
+          <div className="breathing-orb-inner">
+            <strong>{timerRunning ? 'Breathe' : 'Zen'}</strong>
+            <span />
+          </div>
+        </div>
+
+        <p className="tool-experience-instruction">{activeInstruction}</p>
+
+        <div className="tool-experience-timer">{formatTimer(timerSec)}</div>
+
+        <div className="tool-experience-actions">
+          {timerRunning ? (
+            <button
+              type="button"
+              className="tool-main-action"
+              onClick={() => setTimerRunning(false)}
+            >
+              Pause
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="tool-main-action"
+              onClick={startTimer}
+            >
+              {timerSec > 0 ? 'Start Now' : 'Restart'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="tool-secondary-action"
+            onClick={() =>
+              setTimerSec(activeDefinition?.durationSeconds || 60)
+            }
+          >
+            Reset
+          </button>
+
+          <button
+            type="button"
+            className="tool-secondary-action"
+            onClick={saveCurrentToolEntry}
+          >
+            Save result
+          </button>
+        </div>
+
+        {renderHistory()}
+      </div>
+    );
+  }
+
+  function renderWritingView() {
+    return (
+      <div className="tool-writing-view">
+        <div className="tool-experience-heading">
+          <h2>{activeDefinition?.name || activeToolId}</h2>
+          <p>{activeInstruction}</p>
+        </div>
+
+        <div className="tool-writing-card">
+          {renderWritingInput()}
+
+          <button
+            type="button"
+            className="tool-main-action full"
+            onClick={saveCurrentToolEntry}
+          >
+            Save Reflection
+          </button>
+        </div>
+
+        {renderHistory()}
+      </div>
+    );
+  }
+
+  function renderToolRow(toolId) {
+    const definition = toolDefinitions[toolId];
+
+    if (!definition) {
+      return null;
+    }
+
+    const Icon = toolIcons[toolId] || PenLine;
+    const previewText = getToolPreview(definition);
+
+    return (
+      <div className="tool-row-capsule" key={toolId}>
+        <div className="tool-row-left">
+          <div className="tool-icon-circle theme-blue">
+            <Icon size={26} strokeWidth={2.5} />
+          </div>
+
+          <div className="tool-row-details">
+            <h2 className="tool-row-title">{definition.name}</h2>
+
+            {previewText && (
+              <p className="tool-row-desc">
+                {previewText}
+                {previewText.length >= 180 ? '…' : ''}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="tool-row-actions">
+          <button
+            type="button"
+            className="btn-use-capsule"
+            onClick={() => openToolModal(toolId)}
+          >
+            Use Tool
+          </button>
+
+          <button
+            type="button"
+            className="btn-ghost-capsule"
+            onClick={() => openToolModal(toolId)}
+          >
+            History
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Tools</h2>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <button className="btn-secondary" onClick={resetUnlockedTools}>
-          Reset unlocked tools
-        </button>
-
-        <button className="btn-secondary" onClick={unlockAllTools}>
-          Unlock all tools
-        </button>
+    <div className="tools-page">
+      <div className="tools-header-row">
+        <div>
+          <h1>PulseMind Tools</h1>
+          <p>Tools recommended based on your emotional state.</p>
+        </div>
       </div>
 
       {unlocked.length === 0 && (
-        <div>
+        <div className="tools-empty-state">
           <p>No tools unlocked yet. You can unlock tools via the Novel choices.</p>
           <p>To seed a tool for testing, run in console:</p>
-          <pre>localStorage.setItem("unlockedTools", JSON.stringify(["thought_dump"]))</pre>
+          <pre>
+            localStorage.setItem("unlockedTools", JSON.stringify(["thought_dump"]))
+          </pre>
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-        {unlocked.map((id) => {
-          const def = toolDefinitions[id];
-          const title = def ? def.name : id;
-          const desc = def ? def.description : '';
-          const info = toolMap[id] || {};
-
-          const instructionShort = info.instruction
-            ? info.instruction.split('\n')[0].slice(0, 140)
-            : desc;
-
-          const sampleText = info.sample || '';
-          const hasInstruction = Boolean(info.instruction);
-          const showDesc = !hasInstruction && desc;
-
-          return (
-            <div key={id} style={{ border: '1px solid #ddd', padding: 16, borderRadius: 8, background: '#fff' }}>
-              <h3 style={{ marginTop: 0 }}>{title}</h3>
-
-              <div style={{ color: '#444', marginBottom: 8 }}>
-                {instructionShort}
-                {instructionShort.length >= 140 ? '…' : ''}
-              </div>
-
-              {showDesc ? <p style={{ color: '#666', marginTop: 4 }}>{desc}</p> : null}
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button className="btn-primary" onClick={() => openToolModal(id)}>
-                  Use tool
-                </button>
-
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    setHistoryEntries(loadHistory(id));
-                    setActiveTool(id);
-                    setModalOpen(true);
-                  }}
-                >
-                  History
-                </button>
-
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    saveEntry(id, { text: sampleText || '' });
-                    alert('Saved sample entry');
-                  }}
-                >
-                  Quick Use
-                </button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="tools-grid-rows">
+        {unlocked.map((toolId) => renderToolRow(toolId))}
       </div>
 
-      {modalOpen && activeTool && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0,0,0,0.4)',
-          }}
-          onClick={() => setModalOpen(false)}
-        >
+      {modalOpen && activeDefinition && (
+        <div className="tool-modal-backdrop" onClick={closeToolModal}>
           <div
-            style={{ width: 720, maxWidth: '95%', background: '#fff', padding: 20, borderRadius: 8 }}
+            className="tool-modal-card tool-experience-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3>{activeDefinition?.name || activeTool}</h3>
+            <button
+              type="button"
+              className="tool-modal-close"
+              onClick={closeToolModal}
+              aria-label="Close tool"
+            >
+              X
+            </button>
 
-            <div style={{ marginBottom: 12 }}>
-              <strong>Instruction</strong>
-              <p>{activeInstruction}</p>
-            </div>
-
-            {/\d+\s*minute/i.test(activeInstruction) ? (
-              <div>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>
-                  {String(Math.floor(timerSec / 60)).padStart(2, '0')}:
-                  {String(timerSec % 60).padStart(2, '0')}
-                </div>
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {!timerRunning ? (
-                    <button className="btn-primary" onClick={() => startTimerForInstruction(activeInstruction)}>
-                      Start
-                    </button>
-                  ) : (
-                    <button className="btn-secondary" onClick={() => setTimerRunning(false)}>
-                      Stop
-                    </button>
-                  )}
-
-                  <button
-                    className="btn-secondary"
-                    onClick={() => {
-                      saveEntry(activeTool, { note: `Completed timer ${activeInstruction}` });
-                      alert('Saved timer entry');
-                    }}
-                  >
-                    Save result
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ marginBottom: 8 }}>
-                  <textarea
-                    placeholder={activeSample}
-                    value={textValue}
-                    onChange={(e) => setTextValue(e.target.value)}
-                    style={{ width: '100%', minHeight: 120, padding: 8 }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="btn-primary"
-                    onClick={() => {
-                      saveEntry(activeTool, { text: textValue || activeInfo.sample || '' });
-                      alert('Saved');
-                    }}
-                  >
-                    Use tool
-                  </button>
-
-                  <button className="btn-secondary" onClick={() => setHistoryEntries(loadHistory(activeTool))}>
-                    History
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginTop: 12 }}>
-              <h4>History</h4>
-
-              <div style={{ maxHeight: 180, overflow: 'auto' }}>
-                {historyEntries.length === 0 ? (
-                  <div>No entries yet.</div>
-                ) : (
-                  historyEntries.map((it, idx) => (
-                    <div key={`${it.savedAt || 'x'}-${idx}`} style={{ padding: 8, borderBottom: '1px solid #eee' }}>
-                      <div style={{ fontSize: 12, color: '#666' }}>{it.savedAt}</div>
-                      <div>{it.text || it.note}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button className="btn-secondary" onClick={() => setModalOpen(false)}>
-                Close
-              </button>
-            </div>
+            {activeType === 'timer' ? renderTimerView() : renderWritingView()}
           </div>
         </div>
       )}
