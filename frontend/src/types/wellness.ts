@@ -18,8 +18,34 @@ export type EntryInput = {
 };
 
 export type Entry = EntryInput & {
+  _id?: string;
   burnoutScore: number;
   burnoutLevel: BurnoutLevel;
+};
+
+export type InsightGroups = {
+  today: string[];
+  trend: string[];
+  weekly: string[];
+  advanced: string[];
+};
+
+export type InsightsResponse = {
+  message?: string;
+  today: {
+    stress: number | null;
+    sleep: number | null;
+    energy: number | null;
+    burnoutScore: number | null;
+    burnoutLevel: BurnoutLevel | null;
+  };
+  averages: {
+    last2DaysStress: number;
+    last7DaysStress: number;
+    last7DaysEnergy: number;
+    last7DaysBurnout: number;
+  };
+  insights: InsightGroups;
 };
 
 export type Recommendation = {
