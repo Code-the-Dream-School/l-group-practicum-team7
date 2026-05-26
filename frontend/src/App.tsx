@@ -4,7 +4,6 @@ import AuthModal from "./components/AuthModal";
 import Header from "./components/Header";
 import About from "./pages/About";
 import Insights from "./components/Insights";
-import EntryForm from "./components/EntryForm";
 
 import AppHeader from "./components/AppHeader";
 import BottomNav, { type MobileTab } from "./components/BottomNav";
@@ -34,7 +33,6 @@ function App(): React.ReactElement {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [route, setRoute] = useState<Route>("home");
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
-  const [, setInsightsRefreshKey] = useState<number>(0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -147,14 +145,6 @@ function App(): React.ReactElement {
             (user ? (
               <>
                 <h1>Dashboard</h1>
-
-                <EntryForm
-                  onEntryCreated={() => {
-                    setInsightsRefreshKey((prev) => prev + 1);
-                  }}
-                />
-
-                <hr style={{ margin: "2rem 0" }} />
 
                 <Insights />
               </>
