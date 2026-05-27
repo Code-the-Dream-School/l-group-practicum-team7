@@ -16,7 +16,7 @@ import "./styles/App.css";
 
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "register";
 type Route = "home" | "about" | "search" | "auth" |"landing";
 type User = {
   token?: string;
@@ -140,9 +140,8 @@ function App(): React.ReactElement {
       )}
       {route === "landing" ? (
   <HomePage
-  user={user ?? undefined}
   onStartHere={() => {
-    setAuthMode("signup");
+    setAuthMode("register");
     setShowAuth(true);
   }}
 />
@@ -204,6 +203,7 @@ function App(): React.ReactElement {
         />
       )}
     </div>
+  
   );
 }
 

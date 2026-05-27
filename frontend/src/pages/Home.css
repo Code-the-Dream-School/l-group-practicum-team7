@@ -29,14 +29,14 @@
   justify-content: center;
   flex-direction: column;
   text-align: center;
-  background: linear-gradient(135deg, #c7a886, #32cb9f);
   padding: 10px;
+  
 }
 
 .hero-title {
-  font-size: 48px;
+  font-size: 1.9rem;
   font-weight: 800;
-  color: #222;
+  color: #172137;
   letter-spacing: 2px;
 }
 
@@ -47,9 +47,13 @@
   border: none;
   border-radius: 999px;
   cursor: pointer;
-  background: #111;
-  color: #fff;
-  transition: all 0.25s ease;
+  background: #7c3aed; 
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08)
 }
 
 .start-here:hover {
