@@ -11,8 +11,8 @@ const passport = require("passport");
 
 const connectDB = require("./db/connect");
 
-const helloRoutes = require("./routes/hello.routes");
-const insightsRoutes = require("./routes/insights.routes");
+const helloRoutes = require("./routes/helloRoutes.js");
+const insightsRoutes = require("./routes/insightsRoutes.js");
 const sessionRoutes = require("./routes/sessionRoutes");
 const entryRoutes = require("./routes/entry.routes.js");
 const dialogueRoutes = require("./routes/dialogueRoutes");
