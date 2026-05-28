@@ -1,5 +1,5 @@
 import { ChevronRight, CircleCheck } from 'lucide-react';
-import type { Recommendation } from '../types/wellness';
+import type { Recommendation } from '../../types/wellness';
 
 type RecommendedActionsProps = {
   recommendations: Recommendation[];

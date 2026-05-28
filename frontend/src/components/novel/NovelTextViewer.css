@@ -1,0 +1,306 @@
+.novel-root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px 12px;
+  box-sizing: border-box;
+}
+
+.novel-page {
+  width: 100%;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.dialogue-select-card {
+  width: min(100%, 760px);
+  margin: 0 auto 24px;
+  padding: 28px;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+  box-sizing: border-box;
+}
+
+.dialogue-kicker {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 900;
+  color: #5b4ee6;
+}
+
+.dialogue-select-card h2 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.dialogue-muted {
+  color: #64748b;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.problem-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.problem-chip {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f1f5f9;
+  display: grid;
+  gap: 4px;
+}
+
+.problem-chip strong {
+  color: #0f172a;
+  text-transform: capitalize;
+}
+
+.problem-chip span {
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.dialogue-options {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.dialogue-option-card {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 22px;
+  padding: 18px 20px;
+  background: #eef2ff;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dialogue-option-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(91, 78, 230, 0.16);
+}
+
+.dialogue-option-title {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.dialogue-option-reason {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.dialogue-error {
+  padding: 16px;
+  border-radius: 20px;
+  background: #fee2e2;
+  color: #991b1b;
+  margin-top: 16px;
+}
+
+.dialogue-status {
+  padding: 16px;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #64748b;
+  margin-top: 16px;
+}
+
+.mascot-insight-card {
+  margin: 18px 0;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: #ecfeff;
+  border: 1px solid #bae6fd;
+  display: grid;
+  gap: 6px;
+}
+
+.mascot-insight-card strong {
+  color: #0f172a;
+}
+
+.mascot-insight-card span {
+  color: #475569;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .novel-page {
+    padding: 16px 10px;
+  }
+
+  .dialogue-select-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .dialogue-select-card h2 {
+    font-size: 26px;
+  }
+
+  .dialogue-option-card {
+    padding: 16px;
+  }
+}
+
+.novel-scene {
+  position: relative;
+  width: min(100%, 620px);
+  height: 500px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: url("../../assets/novel/graphics/loggia day.png") center bottom / cover no-repeat;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+}
+
+.novel-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.05) 0%,
+    rgba(15, 23, 42, 0.1) 45%,
+    rgba(15, 23, 42, 0.35) 100%
+  );
+  z-index: 1;
+}
+
+.novel-character {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  height: 380px;
+  width: auto;
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.speech-bubble {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 36px), 500px);
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  z-index: 3;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  border-width: 14px 12px 0 12px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.96) transparent transparent transparent;
+}
+
+.speaker {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5b4ee6;
+  margin-bottom: 6px;
+}
+
+.content {
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.novel-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(calc(100% - 32px), 540px);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  z-index: 4;
+}
+
+.novel-finish-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.novel-actions button,
+.btn-primary,
+.btn-secondary {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.novel-actions button,
+.btn-primary {
+  background: #5b4ee6;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(91, 78, 230, 0.28);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #5b4ee6;
+}
+
+@media (max-width: 720px) {
+  .novel-root {
+    padding: 14px 8px;
+  }
+
+  .novel-scene {
+    width: min(100%, 430px);
+    height: 520px;
+    border-radius: 22px;
+  }
+
+  .novel-character {
+    height: 330px;
+    bottom: 54px;
+  }
+
+  .speech-bubble {
+    top: 14px;
+    width: calc(100% - 28px);
+    padding: 12px 14px;
+  }
+
+  .content {
+    font-size: 13px;
+  }
+
+  .novel-actions {
+    bottom: 14px;
+  }
+}

@@ -1,6 +1,6 @@
 import { Moon, Zap } from 'lucide-react';
-import type { Entry } from '../types/wellness';
-import { formatHours } from '../utils/wellness';
+import type { Entry } from '../../types/wellness';
+import { formatHours } from '../../utils/wellness';
 
 type MetricCardsProps = {
   entry: Entry;
