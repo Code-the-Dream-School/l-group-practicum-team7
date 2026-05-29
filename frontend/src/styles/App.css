@@ -310,6 +310,76 @@ a {
   stroke: #dfa12d;
 }
 
+.averages-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px 18px 20px;
+  background: #f8f9fb;
+  border: 1px solid #e1e6ee;
+  border-radius: 28px;
+  box-shadow: 0 2px 12px rgba(37, 47, 72, 0.06);
+}
+
+.averages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.averages-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: #172137;
+  font-size: clamp(1.2rem, 5vw, 1.55rem);
+}
+
+.averages-header h2 svg {
+  width: 24px;
+  height: 24px;
+  color: #5d5ce7;
+}
+
+.averages-header span {
+  color: #68758b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.averages-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.average-item {
+  padding: 16px;
+  background: #eef1f8;
+  border: 1px solid #dfe5f0;
+  border-radius: 20px;
+}
+
+.average-item span {
+  display: block;
+  margin-bottom: 8px;
+  color: #637086;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.average-item strong {
+  display: block;
+  color: #172137;
+  font-size: clamp(1.45rem, 6vw, 1.9rem);
+  line-height: 1;
+}
+
 .trend-card {
   padding: 22px 18px 20px;
 }

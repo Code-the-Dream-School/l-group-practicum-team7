@@ -1,3 +1,4 @@
+import AveragesSummary from '../components/AveragesSummary';
 import InsightHighlights from '../components/InsightHighlights';
 import MetricCards from '../components/MetricCards';
 import RecommendedActions from '../components/RecommendedActions';
@@ -60,6 +61,7 @@ function TodayPage({ entries, insights, loading, error }: TodayPageProps) {
     <main className="dashboard" aria-label="Today dashboard">
       <RiskSummaryCard entry={currentEntry} />
       <MetricCards entry={currentEntry} />
+      {insights && <AveragesSummary averages={insights.averages} />}
       <WeeklyTrendsChart trendData={trendData} />
       <RecommendedActions recommendations={recommendations} />
       {insights && <InsightHighlights insights={insights.insights} />}
