@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Lock, LogOut, Mail, Palette, Save, UserRound } from 'lucide-react';
+import { Crown, Lock, LogOut, Mail, Palette, Save, UserRound } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -10,6 +10,8 @@ type ProfilePageProps = {
     username?: string;
   } | null;
   onLogout: () => void;
+  onOpenCheckout?: () => void;
+  isPremium?: boolean;
 };
 
 type ProfileResponse = {
@@ -18,7 +20,12 @@ type ProfileResponse = {
   email?: string;
 };
 
-function ProfilePage({ user, onLogout }: ProfilePageProps) {
+function ProfilePage({
+  user,
+  onLogout,
+  onOpenCheckout,
+  isPremium = false,
+}: ProfilePageProps) {
   const [name, setName] = useState(user?.name || user?.username || 'User');
   const [email, setEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -35,6 +42,19 @@ function ProfilePage({ user, onLogout }: ProfilePageProps) {
     setName(user?.name || user?.username || 'User');
     setEmail(user?.email || '');
   }, [user]);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  function handleOpenCheckout() {
+    if (onOpenCheckout) {
+      onOpenCheckout();
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('openCheckout'));
+  }
 
   async function loadProfile() {
     const token = localStorage.getItem('token');
@@ -60,10 +80,6 @@ function ProfilePage({ user, onLogout }: ProfilePageProps) {
       setMessage(err instanceof Error ? err.message : 'Failed to load profile');
     }
   }
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
 
   async function saveProfile() {
     const token = localStorage.getItem('token');
@@ -169,6 +185,32 @@ function ProfilePage({ user, onLogout }: ProfilePageProps) {
               <Mail size={16} aria-hidden="true" />
               {email || 'No email available'}
             </p>
+          </div>
+        </section>
+
+        <section className="profile-card profile-form-card">
+          <div className="profile-card-icon">
+            <Crown size={22} aria-hidden="true" />
+          </div>
+
+          <div className="profile-form-content">
+            <h2>PulseMind PRO</h2>
+
+            <p>
+              {isPremium
+                ? 'Premium is active on your account.'
+                : 'Unlock premium features for the demo version of the app.'}
+            </p>
+
+            <button
+              type="button"
+              className="profile-save"
+              onClick={handleOpenCheckout}
+              disabled={isPremium}
+            >
+              <Crown size={18} aria-hidden="true" />
+              {isPremium ? 'Premium active' : 'Buy premium'}
+            </button>
           </div>
         </section>
 

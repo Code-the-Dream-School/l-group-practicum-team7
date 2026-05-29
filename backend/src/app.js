@@ -16,6 +16,7 @@ const insightsRoutes = require("./routes/insights.routes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const entryRoutes = require("./routes/entry.routes.js");
 const dialogueRoutes = require("./routes/dialogueRoutes");
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const passportInit = require("./passport/passportInit");
 const attachUserFromJwt = require("./middleware/attachUserFromJwt");
@@ -83,6 +84,7 @@ app.use("/api/hello", helloRoutes);
 app.use("/api/entries", entryRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/dialogues", dialogueRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

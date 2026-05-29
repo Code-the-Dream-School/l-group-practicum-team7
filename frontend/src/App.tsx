@@ -7,6 +7,8 @@ import Insights from './components/Insights/Insights';
 import EntryForm from './components/Forms/EntryForm';
 import ToolsPage from './pages/ToolsPage';
 import NovelPage from './pages/NovelPage';
+import CheckoutPage from './pages/CheckoutPage';
+import CheckoutPageSuccess from './pages/CheckoutPageSuccess';
 
 import AppHeader from './components/Layout/AppHeader';
 import BottomNav, { type MobileTab } from './components/Layout/BottomNav';
@@ -29,7 +31,9 @@ type Route =
   | 'tools'
   | 'insights'
   | 'dialogues'
-  | 'novel';
+  | 'novel'
+  | 'checkout'
+  | 'checkout_success';
 
 type User = {
   token?: string;
@@ -54,69 +58,120 @@ function App(): React.ReactElement {
   const [, setInsightsRefreshKey] = useState<number>(0);
   const [lastEntryText, setLastEntryText] = useState<string>('');
   const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string>('');
+  const [isPremium, setIsPremium] = useState<boolean>(() => {
+    const raw = localStorage.getItem('premiumStatus');
 
-  useEffect(() => {
-  const onOpenTools = () => {
-    const token = localStorage.getItem('token');
+    if (!raw) return false;
 
-    if (!token) {
-      setPendingRoute('tools');
-      setAuthMode('login');
-      setShowAuth(true);
-      setRoute('auth');
-      return;
+    try {
+      return JSON.parse(raw)?.status === 'active';
+    } catch {
+      return false;
     }
+  });
+  useEffect(() => {
+      const onOpenTools = () => {
+        const token = localStorage.getItem('token');
 
-    setRoute('tools');
-  };
+        if (!token) {
+          setPendingRoute('tools');
+          setAuthMode('login');
+          setShowAuth(true);
+          setRoute('auth');
+          return;
+        }
 
-  window.addEventListener('openTools', onOpenTools);
+        setRoute('tools');
+      };
 
-  const token = localStorage.getItem('token');
+      const onOpenCheckout = () => {
+        const token = localStorage.getItem('token');
 
-  if (!token) {
-    setUser(null);
-    setChecking(false);
-    setRoute('auth');
-    setAuthMode('login');
-    setShowAuth(true);
+        if (!token) {
+          setPendingRoute('checkout');
+          setAuthMode('login');
+          setShowAuth(true);
+          setRoute('auth');
+          return;
+        }
 
-    return () => {
-      window.removeEventListener('openTools', onOpenTools);
-    };
-  }
+        setRoute('checkout');
+      };
 
-  fetch(`${API}/api/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('not authed');
+      const onCheckoutSuccess = (event: Event) => {
+        const customEvent = event as CustomEvent<{ orderId?: string }>;
+
+        setLastOrderId(customEvent.detail?.orderId || '');
+        setIsPremium(true);
+        setRoute('checkout_success');
+      };
+
+      window.addEventListener('openTools', onOpenTools);
+      window.addEventListener('openCheckout', onOpenCheckout);
+      window.addEventListener('checkoutSuccess', onCheckoutSuccess);
+
+      return () => {
+        window.removeEventListener('openTools', onOpenTools);
+        window.removeEventListener('openCheckout', onOpenCheckout);
+        window.removeEventListener('checkoutSuccess', onCheckoutSuccess);
+      };
+    }, []);
+
+    useEffect(() => {
+      const controller = new AbortController();
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        setUser(null);
+        setChecking(false);
+        setRoute('auth');
+        setAuthMode('login');
+        setShowAuth(true);
+
+        return () => {
+          controller.abort();
+        };
       }
 
-      return response.json() as Promise<MeResponse>;
-    })
-    .then((userData) => {
-      setUser({ ...userData, token });
-      setRoute('backend');
-    })
-    .catch(() => {
-      localStorage.removeItem('token');
-      setUser(null);
-      setRoute('auth');
-      setAuthMode('login');
-      setShowAuth(true);
-    })
-    .finally(() => {
-      setChecking(false);
-    });
+      fetch(`${API}/api/auth/me`, {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('not authed');
+          }
 
-  return () => {
-    window.removeEventListener('openTools', onOpenTools);
-  };
-}, []);
+          return response.json() as Promise<MeResponse>;
+        })
+        .then((userData) => {
+          setUser({ ...userData, token });
+          setRoute('backend');
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          localStorage.removeItem('token');
+          setUser(null);
+          setRoute('auth');
+          setAuthMode('login');
+          setShowAuth(true);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setChecking(false);
+          }
+        });
+
+      return () => {
+        controller.abort();
+      };
+    }, []);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -193,13 +248,46 @@ function App(): React.ReactElement {
       <section className="app-shell">
         <AppHeader />
 
-        {mobileTab === 'today' && <TodayPage />}
-        {mobileTab === 'history' && <HistoryPage />}
-        {mobileTab === 'profile' && (
-          <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
+        {route === 'checkout' && user && (
+          <CheckoutPage
+            onSuccess={(orderId) => {
+              setLastOrderId(orderId);
+              setIsPremium(true);
+              setRoute('checkout_success');
+            }}
+            onCancel={() => {
+              setRoute('backend');
+              setMobileTab('profile');
+            }}
+          />
         )}
 
-        <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+        {route === 'checkout_success' && (
+          <CheckoutPageSuccess
+            orderId={lastOrderId}
+            onGoProfile={() => {
+              setMobileTab('profile');
+              setRoute('backend');
+            }}
+          />
+        )}
+
+        {route !== 'checkout' && route !== 'checkout_success' && (
+          <>
+            {mobileTab === 'today' && <TodayPage />}
+            {mobileTab === 'history' && <HistoryPage />}
+            {mobileTab === 'profile' && (
+              <ProfilePage
+                user={user ?? undefined}
+                onLogout={handleLogout}
+                isPremium={isPremium}
+                onOpenCheckout={() => setRoute('checkout')}
+              />
+            )}
+
+            <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+          </>
+        )}
       </section>
 
       <section className="backend-front-section">
@@ -243,7 +331,6 @@ function App(): React.ReactElement {
             ) : (
               <p>Please log in to continue.</p>
             ))}
-
           {route === 'dialogues' &&
             (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
 
