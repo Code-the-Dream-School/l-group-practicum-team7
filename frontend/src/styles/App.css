@@ -656,7 +656,7 @@ a {
   left: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   min-height: 78px;
   padding: 8px max(8px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-bottom))
     max(8px, env(safe-area-inset-right));

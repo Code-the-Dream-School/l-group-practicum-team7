@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import AuthModal from "./components/AuthModal";
 import AppHeader from "./components/AppHeader";
 import BottomNav, { type MobileTab } from "./components/BottomNav";
+import About from "./pages/About";
 import TodayPage from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -155,6 +156,7 @@ function App(): React.ReactElement {
         {mobileTab === "profile" && (
           <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
         )}
+        {mobileTab === "about" && <About />}
 
         <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
       </section>
