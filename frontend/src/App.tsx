@@ -1,35 +1,35 @@
 import React, { useEffect, useState } from "react";
 
-import AuthModal from './components/Auth/AuthModal';
-import Header from './components/Layout/Header';
-import About from './pages/About';
-import Insights from './components/Insights/Insights';
-import EntryForm from './components/Forms/EntryForm';
-import ToolsPage from './pages/ToolsPage';
-import NovelPage from './pages/NovelPage';
+import AuthModal from "./components/Auth/AuthModal";
+import Header from "./components/Layout/Header";
+import About from "./pages/About";
+import Insights from "./components/Insights/Insights";
+import EntryForm from "./components/Forms/EntryForm";
+import ToolsPage from "./pages/ToolsPage";
+import NovelPage from "./pages/NovelPage";
 
-import AppHeader from './components/Layout/AppHeader';
-import BottomNav, { type MobileTab } from './components/Layout/BottomNav';
-import TodayPage from './pages/TodayPage';
-import HistoryPage from './pages/HistoryPage';
-import ProfilePage from './pages/ProfilePage';
+import AppHeader from "./components/Layout/AppHeader";
+import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
+import TodayPage from "./pages/TodayPage";
+import HistoryPage from "./pages/HistoryPage";
+import ProfilePage from "./pages/ProfilePage";
 
 import "./App.css";
 import "./styles/App.css";
 
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = "login" | "signup";
 
 type Route =
-  | 'backend'
-  | 'about'
-  | 'search'
-  | 'auth'
-  | 'tools'
-  | 'insights'
-  | 'dialogues'
-  | 'novel';
+  | "backend"
+  | "about"
+  | "search"
+  | "auth"
+  | "tools"
+  | "insights"
+  | "dialogues"
+  | "novel";
 
 type User = {
   token?: string;
@@ -48,75 +48,75 @@ function App(): React.ReactElement {
   const [checking, setChecking] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [route, setRoute] = useState<Route>('backend');
-  const [mobileTab, setMobileTab] = useState<MobileTab>('today');
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [route, setRoute] = useState<Route>("backend");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
-  const [lastEntryText, setLastEntryText] = useState<string>('');
+  const [lastEntryText, setLastEntryText] = useState<string>("");
   const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
 
   useEffect(() => {
-  const onOpenTools = () => {
-    const token = localStorage.getItem('token');
+    const onOpenTools = () => {
+      const token = localStorage.getItem("token");
 
-    if (!token) {
-      setPendingRoute('tools');
-      setAuthMode('login');
-      setShowAuth(true);
-      setRoute('auth');
-      return;
-    }
-
-    setRoute('tools');
-  };
-
-  window.addEventListener('openTools', onOpenTools);
-
-  const token = localStorage.getItem('token');
-
-  if (!token) {
-    setUser(null);
-    setChecking(false);
-    setRoute('auth');
-    setAuthMode('login');
-    setShowAuth(true);
-
-    return () => {
-      window.removeEventListener('openTools', onOpenTools);
-    };
-  }
-
-  fetch(`${API}/api/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('not authed');
+      if (!token) {
+        setPendingRoute("tools");
+        setAuthMode("login");
+        setShowAuth(true);
+        setRoute("auth");
+        return;
       }
 
-      return response.json() as Promise<MeResponse>;
-    })
-    .then((userData) => {
-      setUser({ ...userData, token });
-      setRoute('backend');
-    })
-    .catch(() => {
-      localStorage.removeItem('token');
-      setUser(null);
-      setRoute('auth');
-      setAuthMode('login');
-      setShowAuth(true);
-    })
-    .finally(() => {
-      setChecking(false);
-    });
+      setRoute("tools");
+    };
 
-  return () => {
-    window.removeEventListener('openTools', onOpenTools);
-  };
-}, []);
+    window.addEventListener("openTools", onOpenTools);
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUser(null);
+      setChecking(false);
+      setRoute("auth");
+      setAuthMode("login");
+      setShowAuth(true);
+
+      return () => {
+        window.removeEventListener("openTools", onOpenTools);
+      };
+    }
+
+    fetch(`${API}/api/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("not authed");
+        }
+
+        return response.json() as Promise<MeResponse>;
+      })
+      .then((userData) => {
+        setUser({ ...userData, token });
+        setRoute("backend");
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        setUser(null);
+        setRoute("auth");
+        setAuthMode("login");
+        setShowAuth(true);
+      })
+      .finally(() => {
+        setChecking(false);
+      });
+
+    return () => {
+      window.removeEventListener("openTools", onOpenTools);
+    };
+  }, []);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -131,49 +131,49 @@ function App(): React.ReactElement {
       setRoute(pendingRoute);
       setPendingRoute(null);
     } else {
-      setRoute('backend');
+      setRoute("backend");
     }
   };
 
   const handleLoginOpen = (mode?: AuthMode): void => {
     setAuthMode(mode || "login");
     setShowAuth(true);
-    setRoute('auth');
+    setRoute("auth");
   };
 
   const handleLogout = (): void => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
     setPendingRoute(null);
-    setRoute('auth');
-    setAuthMode('login');
+    setRoute("auth");
+    setAuthMode("login");
     setShowAuth(true);
   };
 
   const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== 'about') {
+    if (!user && nextRoute !== "about") {
       setPendingRoute(nextRoute);
-      setAuthMode('login');
+      setAuthMode("login");
       setShowAuth(true);
-      setRoute('auth');
+      setRoute("auth");
       return;
     }
 
-    if (nextRoute === 'insights') {
+    if (nextRoute === "insights") {
       try {
         window.dispatchEvent(
-          new CustomEvent('insights.entry', {
+          new CustomEvent("insights.entry", {
             detail: { text: lastEntryText },
-          })
+          }),
         );
       } catch (e) {}
 
-      setRoute('backend');
+      setRoute("backend");
       return;
     }
 
-    if (nextRoute === 'novel') {
-      setRoute('dialogues');
+    if (nextRoute === "novel") {
+      setRoute("dialogues");
       return;
     }
 
@@ -213,7 +213,7 @@ function App(): React.ReactElement {
         />
 
         <main className="app-main">
-          {route === 'backend' &&
+          {route === "backend" &&
             (user ? (
               <>
                 <h1>Dashboard</h1>
@@ -222,15 +222,15 @@ function App(): React.ReactElement {
                   onEntryCreated={(text?: string) => {
                     setInsightsRefreshKey((prev) => prev + 1);
 
-                    if (typeof text === 'string') {
+                    if (typeof text === "string") {
                       setLastEntryText(text);
                     }
 
                     try {
                       window.dispatchEvent(
-                        new CustomEvent('insights.entry', {
-                          detail: { text: text || '' },
-                        })
+                        new CustomEvent("insights.entry", {
+                          detail: { text: text || "" },
+                        }),
                       );
                     } catch (e) {}
                   }}
@@ -244,12 +244,15 @@ function App(): React.ReactElement {
               <p>Please log in to continue.</p>
             ))}
 
-          {route === 'dialogues' &&
+          {route === "dialogues" &&
             (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
 
-          {route === 'tools' &&
-            (user ? <ToolsPage /> : <p>Please log in to continue.</p>)}
-
+          {route === "tools" &&
+            (user ? (
+              <ToolsPage onClose={() => setRoute("dialogues")} />
+            ) : (
+              <p>Please log in to continue.</p>
+            ))}
           {route === "about" && <About />}
 
           {route === "search" &&
@@ -280,4 +283,3 @@ function App(): React.ReactElement {
 }
 
 export default App;
-
