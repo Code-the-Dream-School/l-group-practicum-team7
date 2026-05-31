@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Activity, Plus } from "lucide-react";
-import DailyLogForm from "./DailyLogForm";
+import DailyLogForm from "../Forms/DailyLogForm";
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 

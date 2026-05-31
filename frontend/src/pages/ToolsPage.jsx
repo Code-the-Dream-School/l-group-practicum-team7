@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Wind,
   Brain,
@@ -13,8 +13,49 @@ import {
 import { allTools } from "../utils/toolsData";
 import "./ToolsPage.css";
 
-export default function ToolsPage({ unlockedTools = [], onClose }) {
+export default function ToolsPage({ onClose }) {
   const [selectedTool, setSelectedTool] = useState(null);
+  const [unlockedTools, setUnlockedTools] = useState([]);
+
+  useEffect(() => {
+    const normalizeTools = (rawTools) => {
+      return rawTools
+        .map((item) => {
+          if (typeof item === "string") return item;
+          return item?.key || item?.id || null;
+        })
+        .filter(Boolean);
+    };
+
+    const loadUnlockedTools = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem("unlockedTools") || "[]");
+        setUnlockedTools(normalizeTools(raw));
+      } catch (error) {
+        setUnlockedTools([]);
+      }
+    };
+
+    loadUnlockedTools();
+
+    const handler = (event) => {
+      try {
+        const raw =
+          event?.detail?.unlockedTools ||
+          JSON.parse(localStorage.getItem("unlockedTools") || "[]");
+
+        setUnlockedTools(normalizeTools(raw));
+      } catch (error) {
+        setUnlockedTools([]);
+      }
+    };
+
+    window.addEventListener("dialogueStateUpdate", handler);
+
+    return () => {
+      window.removeEventListener("dialogueStateUpdate", handler);
+    };
+  }, []);
 
   const visibleTools = allTools.filter((tool) =>
     unlockedTools.includes(tool.id),
@@ -46,12 +87,20 @@ export default function ToolsPage({ unlockedTools = [], onClose }) {
         <button className="close-button" onClick={onClose}>
           X
         </button>
+
         <div className="tools-header-row">
           <div>
             <h1>PulseMind Tools</h1>
             <p>Tools recommended based on your emotional state.</p>
           </div>
         </div>
+
+        {visibleTools.length === 0 && (
+          <p className="tools-empty-message">
+            No tools unlocked yet. Complete the chat or novel flow to unlock
+            recommended tools.
+          </p>
+        )}
 
         <div className="tools-grid-rows">
           {visibleTools.map((tool) => {
@@ -66,7 +115,6 @@ export default function ToolsPage({ unlockedTools = [], onClose }) {
 
                   <div className="tool-row-details">
                     <h2 className="tool-row-title">{tool.title}</h2>
-
                     <p className="tool-row-desc">{tool.description}</p>
                   </div>
                 </div>
@@ -94,7 +142,6 @@ export default function ToolsPage({ unlockedTools = [], onClose }) {
             </button>
 
             <h2>{selectedTool.title}</h2>
-
             <p>{selectedTool.description}</p>
           </div>
         )}
