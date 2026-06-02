@@ -145,11 +145,25 @@ export default function NovelTextViewer({
                 Open Tools
               </button>
 
-              <button className="btn-secondary" onClick={onDialogueFinished}>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  if (onDialogueFinished) {
+                    onDialogueFinished();
+                  }
+                }}
+              >
                 Next dialogue
               </button>
 
-              <button className="btn-secondary" onClick={onBack}>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                  }
+                }}
+              >
                 Back
               </button>
             </div>
