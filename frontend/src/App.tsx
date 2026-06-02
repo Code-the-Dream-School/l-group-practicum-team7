@@ -7,6 +7,7 @@ import Insights from "./components/Insights/Insights";
 import EntryForm from "./components/Forms/EntryForm";
 import ToolsPage from "./pages/ToolsPage";
 import NovelPage from "./pages/NovelPage";
+import HomePage from "./pages/Home";
 
 import AppHeader from "./components/Layout/AppHeader";
 import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
@@ -19,7 +20,7 @@ import "./styles/App.css";
 
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "register" | "signup";
 
 type Route =
   | "backend"
@@ -29,7 +30,8 @@ type Route =
   | "tools"
   | "insights"
   | "dialogues"
-  | "novel";
+  | "novel"
+  | "landing";
 
 type User = {
   token?: string;
@@ -49,7 +51,7 @@ function App(): React.ReactElement {
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [route, setRoute] = useState<Route>("backend");
+  const [route, setRoute] = useState<Route>("landing");
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
   const [lastEntryText, setLastEntryText] = useState<string>("");
@@ -77,9 +79,9 @@ function App(): React.ReactElement {
     if (!token) {
       setUser(null);
       setChecking(false);
-      setRoute("auth");
+      setRoute("landing");
       setAuthMode("login");
-      setShowAuth(true);
+      setShowAuth(false);
 
       return () => {
         window.removeEventListener("openTools", onOpenTools);
@@ -105,9 +107,9 @@ function App(): React.ReactElement {
       .catch(() => {
         localStorage.removeItem("token");
         setUser(null);
-        setRoute("auth");
+        setRoute("landing");
         setAuthMode("login");
-        setShowAuth(true);
+        setShowAuth(false);
       })
       .finally(() => {
         setChecking(false);
@@ -136,7 +138,7 @@ function App(): React.ReactElement {
   };
 
   const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode || "login");
+    setAuthMode(mode === "signup" ? "register" : mode || "login");
     setShowAuth(true);
     setRoute("auth");
   };
@@ -145,13 +147,13 @@ function App(): React.ReactElement {
     localStorage.removeItem("token");
     setUser(null);
     setPendingRoute(null);
-    setRoute("auth");
+    setRoute("landing");
     setAuthMode("login");
-    setShowAuth(true);
+    setShowAuth(false);
   };
 
   const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== "about") {
+    if (!user && nextRoute !== "about" && nextRoute !== "landing") {
       setPendingRoute(nextRoute);
       setAuthMode("login");
       setShowAuth(true);
@@ -190,89 +192,104 @@ function App(): React.ReactElement {
 
   return (
     <div className="app">
-      <section className="app-shell">
-        <AppHeader />
+      {route !== "landing" && (
+        <section className="app-shell">
+          <AppHeader />
 
-        {mobileTab === "today" && <TodayPage />}
-        {mobileTab === "history" && <HistoryPage />}
-        {mobileTab === "profile" && (
-          <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
-        )}
+          {mobileTab === "today" && <TodayPage />}
+          {mobileTab === "history" && <HistoryPage />}
+          {mobileTab === "profile" && (
+            <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
+          )}
 
-        <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
-      </section>
+          <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+        </section>
+      )}
 
-      <section className="backend-front-section">
-        <h2 className="backend-front-title">&lt;backend front&gt;</h2>
-
-        <Header
-          user={user ?? undefined}
-          onLogin={handleLoginOpen}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
+      {route === "landing" ? (
+        <HomePage
+          onStartHere={() => {
+            setAuthMode("register");
+            setShowAuth(true);
+            setRoute("auth");
+          }}
         />
+      ) : (
+        <section className="backend-front-section">
+          <h2 className="backend-front-title">&lt;backend front&gt;</h2>
 
-        <main className="app-main">
-          {route === "backend" &&
-            (user ? (
-              <>
-                <h1>Dashboard</h1>
+          <Header
+            user={user ?? undefined}
+            onLogin={handleLoginOpen}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+          />
 
-                <EntryForm
-                  onEntryCreated={(text?: string) => {
-                    setInsightsRefreshKey((prev) => prev + 1);
+          <main className="app-main">
+            {route === "backend" &&
+              (user ? (
+                <>
+                  <h1>Dashboard</h1>
 
-                    if (typeof text === "string") {
-                      setLastEntryText(text);
-                    }
+                  <EntryForm
+                    onEntryCreated={(text?: string) => {
+                      setInsightsRefreshKey((prev) => prev + 1);
 
-                    try {
-                      window.dispatchEvent(
-                        new CustomEvent("insights.entry", {
-                          detail: { text: text || "" },
-                        }),
-                      );
-                    } catch (e) {}
-                  }}
-                />
+                      if (typeof text === "string") {
+                        setLastEntryText(text);
+                      }
 
-                <hr style={{ margin: "2rem 0" }} />
+                      try {
+                        window.dispatchEvent(
+                          new CustomEvent("insights.entry", {
+                            detail: { text: text || "" },
+                          }),
+                        );
+                      } catch (e) {}
+                    }}
+                  />
 
-                <Insights />
-              </>
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
+                  <hr style={{ margin: "2rem 0" }} />
 
-          {route === "dialogues" &&
-            (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
+                  <Insights />
+                </>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
 
-          {route === "tools" &&
-            (user ? (
-              <ToolsPage onClose={() => setRoute("dialogues")} />
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
-          {route === "about" && <About />}
+            {route === "dialogues" &&
+              (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
 
-          {route === "search" &&
-            (user ? (
-              <p>Search page placeholder</p>
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
+            {route === "tools" &&
+              (user ? (
+                <ToolsPage onClose={() => setRoute("dialogues")} />
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
 
-          {route === "auth" && !user && <p>Please log in to continue.</p>}
-        </main>
-      </section>
+            {route === "about" && <About />}
+
+            {route === "search" &&
+              (user ? (
+                <p>Search page placeholder</p>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
+
+            {route === "auth" && !user && <p>Please log in to continue.</p>}
+          </main>
+        </section>
+      )}
 
       {showAuth && (
         <AuthModal
-          initialMode={authMode}
-          disableClose={!user}
+          initialMode={authMode === "signup" ? "register" : authMode}
+          disableClose={false}
           onClose={() => {
-            if (user) {
-              setShowAuth(false);
+            setShowAuth(false);
+
+            if (!user && route === "auth") {
+              setRoute("landing");
             }
           }}
           onAuthed={handleAuthed}
