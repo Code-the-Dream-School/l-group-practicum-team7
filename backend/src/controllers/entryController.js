@@ -5,7 +5,7 @@ const { getSleepScore, calculateBurnout } = require("../services/burnout");
 
 // CREATE
 const createEntry = async (req, res) => {
-  const { stress, workload, sleepHours, energy } = req.body;
+  const { stress, workload, sleepHours, energy, date } = req.body;
   const userId = req.user.userId;
 
   if (
@@ -44,17 +44,41 @@ const createEntry = async (req, res) => {
     energy,
     burnoutScore: score,
     burnoutLevel: level,
-    date: new Date(),
-  });
+    date: date ? new Date(date) : new Date(),  
+});
 
   res.status(StatusCodes.CREATED).json(entry);
 };
 
-// READ ALL
+// READ ENTRIES
 const getEntries = async (req, res) => {
   const userId = req.user.userId;
 
-  const entries = await Entry.find({ userId }).sort({ date: -1 });
+  const { from, to, limit } = req.query;
+
+  const query = { userId };
+
+  if (from || to) {
+    query.date = {};
+
+    if (from) {
+      query.date.$gte = new Date(from);
+    }
+
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      query.date.$lte = end;
+    }
+  }
+
+  let entriesQuery = Entry.find(query).sort({ date: -1, createdAt: -1 });
+
+  if (limit) {
+    entriesQuery = entriesQuery.limit(Number(limit));
+  }
+
+  const entries = await entriesQuery;
 
   res.status(StatusCodes.OK).json(entries);
 };
@@ -77,7 +101,7 @@ const getEntryById = async (req, res) => {
 const updateEntry = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.userId;
-  const { stress, workload, sleepHours, energy } = req.body;
+  const { stress, workload, sleepHours, energy, date } = req.body;
 
   if (
     stress == null ||
