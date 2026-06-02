@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import dialogueEngine from "../../assets/novel/text/dialogueEngine";
 import mascotImage from "../../assets/novel/graphics/miyuri_d_pryamo.png";
 import "./NovelTextViewer.css";
+import loggia from "../../assets/novel/graphics/loggia day.png";
 
 export default function NovelTextViewer({
   flowId,
@@ -13,6 +14,18 @@ export default function NovelTextViewer({
   const [introInsight, setIntroInsight] = useState(null);
   const [showingInsight, setShowingInsight] = useState(false);
 
+  // subscribe to engine updates
+  useEffect(() => {
+    dialogueEngine.setOnUpdate(() => {
+      setNode(dialogueEngine.getCurrentNode());
+    });
+
+    return () => {
+      dialogueEngine.setOnUpdate(null);
+    };
+  }, []);
+
+  // start flow
   useEffect(() => {
     if (!flowId) return;
 
@@ -37,7 +50,6 @@ export default function NovelTextViewer({
 
   const startDialogueAfterInsight = () => {
     const nextNode = dialogueEngine.startDialogue(flowId);
-
     setNode(nextNode || dialogueEngine.getCurrentNode());
     setShowingInsight(false);
     setIntroInsight(null);
@@ -53,10 +65,12 @@ export default function NovelTextViewer({
     setNode(nextNode || dialogueEngine.getCurrentNode());
   };
 
+ 
   if (showingInsight && introInsight) {
     return (
       <div className="novel-root">
         <div className="novel-scene">
+          <img className="novel-bg" src={loggia} alt="Background" />
           <img className="novel-character" src={mascotImage} alt="Mascot" />
 
           <div className="speech-bubble">
@@ -78,13 +92,17 @@ export default function NovelTextViewer({
     );
   }
 
+ 
   if (!node) {
     return null;
   }
 
-  const hasChoices = Array.isArray(node.choices) && node.choices.length > 0;
+  const hasChoices =
+    Array.isArray(node.choices) && node.choices.length > 0;
+
   const hasNext = Boolean(node.next);
 
+ 
   return (
     <div className="novel-root">
       <div className="novel-scene">
@@ -96,6 +114,7 @@ export default function NovelTextViewer({
         </div>
 
         <div className="novel-actions">
+        
           {hasChoices &&
             node.choices.map((choice) => (
               <button
@@ -107,21 +126,21 @@ export default function NovelTextViewer({
               </button>
             ))}
 
+       
           {!hasChoices && hasNext && (
             <button className="btn-primary" onClick={handleNext}>
               Next
             </button>
           )}
 
+       
           {!hasChoices && !hasNext && (
             <div className="novel-finish-actions">
               <button
                 className="btn-primary"
-                onClick={() => {
-                  try {
-                    window.dispatchEvent(new CustomEvent("openTools"));
-                  } catch (e) {}
-                }}
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("openTools"))
+                }
               >
                 Open Tools
               </button>

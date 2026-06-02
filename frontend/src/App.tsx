@@ -140,7 +140,7 @@ function App(): React.ReactElement {
   const handleLoginOpen = (mode?: AuthMode): void => {
     setAuthMode(mode === "signup" ? "register" : mode || "login");
     setShowAuth(true);
-    setRoute("auth");
+    setRoute('auth');
   };
 
   const handleLogout = (): void => {
