@@ -160,9 +160,9 @@ export default function ToolsPage() {
       } catch (e) {}
     }
 
-    loadUnlocked();
+    loadUnlockedTools();
 
-    const handler = (e) => {
+    const handler = (event) => {
       try {
         const raw =
           e?.detail?.unlockedTools ||
@@ -174,11 +174,10 @@ export default function ToolsPage() {
       }
     };
 
-    window.addEventListener('dialogueStateUpdate', handler);
+    window.addEventListener("dialogueStateUpdate", handler);
 
     return () => {
-      mounted = false;
-      window.removeEventListener('dialogueStateUpdate', handler);
+      window.removeEventListener("dialogueStateUpdate", handler);
     };
   }, []);
 
