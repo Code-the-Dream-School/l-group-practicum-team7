@@ -1,0 +1,61 @@
+Breathing
+
+Instruction:
+Take 1 minute. Breathe in slowly, pause for a moment, then breathe out longer than you breathed in. Repeat 5 times.
+
+Sample entry:
+I breathed slowly for 1 minute. My body feels a little calmer.
+
+Grounding
+
+Instruction:
+Look around and name 5 things you see, 4 things you feel, 3 sounds you hear, 2 smells, and 1 thing you can taste or notice in your body.
+
+Sample entry:
+I see my desk, screen, cup, wall, and window. I feel my feet on the floor. I hear the fan.
+
+Thought Dump
+
+Instruction:
+Write down 3 worries without trying to solve them right now.
+
+Sample entry:
+
+I am worried about deadlines.
+I am worried about my project.
+I am worried I am falling behind.
+Working with Over-Responsibility
+
+Instruction:
+Write one task you feel responsible for. Then ask: “Is this fully mine, partly mine, or not mine?”
+
+Sample entry:
+Task: Fix everything today.
+Reality: This is partly mine. I can do one part today, not everything.
+
+Strategic Refusal
+
+Instruction:
+Choose one task you can refuse, postpone, simplify, or stop doing today.
+
+Sample entry:
+I will not rewrite the whole project today. I will only fix one broken screen.
+
+Prioritization
+
+Instruction:
+Write 3 tasks. Mark each one as urgent/not urgent and important/not important.
+
+Sample entry:
+
+Submit assignment — urgent, important.
+Clean files — not urgent, less important.
+Fix login bug — important, not urgent.
+Asking for Support
+
+Instruction:
+Write one thing you need help with and one person you could ask.
+
+Sample entry:
+I need help understanding the project structure. I can ask my teammate to explain the main files.
+*** End Patch

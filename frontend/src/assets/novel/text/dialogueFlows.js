@@ -736,3 +736,5 @@ const dialogueFlows = {
     }
   }
 };
+
+export default dialogueFlows;

@@ -1,25 +1,46 @@
 import React, { useEffect, useState } from "react";
 
-import AuthModal from "./components/AuthModal";
-import Header from "./components/Header";
+import AuthModal from "./components/Auth/AuthModal";
+import Header from "./components/Layout/Header";
 import About from "./pages/About";
-import Insights from "./components/Insights";
-import EntryForm from "./components/EntryForm";
+import Insights from "./components/Insights/Insights";
+import EntryForm from "./components/Forms/EntryForm";
+import ToolsPage from "./pages/ToolsPage";
+import NovelPage from "./pages/NovelPage";
 import HomePage from "./pages/Home";
-import AppHeader from "./components/AppHeader";
-import BottomNav, { type MobileTab } from "./components/BottomNav";
+
+import AppHeader from "./components/Layout/AppHeader";
+import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
 import TodayPage from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+
 import "./App.css";
 import "./styles/App.css";
 
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = "login" | "register";
-type Route = "home" | "about" | "search" | "auth" |"landing";
+type AuthMode = "login" | "register" | "signup";
+
+type Route =
+  | "backend"
+  | "about"
+  | "search"
+  | "auth"
+  | "tools"
+  | "insights"
+  | "dialogues"
+  | "novel"
+  | "landing";
+
 type User = {
   token?: string;
+  email?: string;
+  name?: string;
+  username?: string;
+  userId?: string;
+  id?: string;
+  _id?: string;
   [key: string]: unknown;
 };
 
@@ -33,19 +54,38 @@ function App(): React.ReactElement {
   const [route, setRoute] = useState<Route>("landing");
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
+  const [lastEntryText, setLastEntryText] = useState<string>("");
+  const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
 
   useEffect(() => {
+    const onOpenTools = () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setPendingRoute("tools");
+        setAuthMode("login");
+        setShowAuth(true);
+        setRoute("auth");
+        return;
+      }
+
+      setRoute("tools");
+    };
+
+    window.addEventListener("openTools", onOpenTools);
+
     const token = localStorage.getItem("token");
 
     if (!token) {
+      setUser(null);
       setChecking(false);
-      //setRoute("auth");
-      //setAuthMode("login");
-      //setShowAuth(true);
       setRoute("landing");
+      setAuthMode("login");
       setShowAuth(false);
-      
-      return;
+
+      return () => {
+        window.removeEventListener("openTools", onOpenTools);
+      };
     }
 
     fetch(`${API}/api/auth/me`, {
@@ -62,20 +102,23 @@ function App(): React.ReactElement {
       })
       .then((userData) => {
         setUser({ ...userData, token });
-        setRoute("home");
+        setRoute("backend");
       })
       .catch(() => {
         localStorage.removeItem("token");
         setUser(null);
-        //setRoute("auth");
         setRoute("landing");
-        setShowAuth(true);
+        setAuthMode("login");
+        setShowAuth(false);
       })
       .finally(() => {
         setChecking(false);
       });
+
+    return () => {
+      window.removeEventListener("openTools", onOpenTools);
+    };
   }, []);
-  
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -85,34 +128,58 @@ function App(): React.ReactElement {
     }
 
     setShowAuth(false);
-    setRoute("home");
+
+    if (pendingRoute) {
+      setRoute(pendingRoute);
+      setPendingRoute(null);
+    } else {
+      setRoute("backend");
+    }
   };
 
   const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode || "login");
+    setAuthMode(mode === "signup" ? "register" : mode || "login");
     setShowAuth(true);
     setRoute("auth");
   };
 
+  const handleLogout = (): void => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setPendingRoute(null);
+    setRoute("landing");
+    setAuthMode("login");
+    setShowAuth(false);
+  };
+
   const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== "about"&& nextRoute !== "landing") {
+    if (!user && nextRoute !== "about" && nextRoute !== "landing") {
+      setPendingRoute(nextRoute);
       setAuthMode("login");
       setShowAuth(true);
       setRoute("auth");
       return;
     }
 
-    setRoute(nextRoute);
-  };
+    if (nextRoute === "insights") {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("insights.entry", {
+            detail: { text: lastEntryText },
+          }),
+        );
+      } catch (e) {}
 
-  const handleLogout = (): void => {
-    localStorage.removeItem("token");
-    setUser(null);
-    //setRoute("auth");
-    setRoute("landing");
-    setAuthMode("login");
-    //setShowAuth(true);
-    setShowAuth(false);
+      setRoute("backend");
+      return;
+    }
+
+    if (nextRoute === "novel") {
+      setRoute("dialogues");
+      return;
+    }
+
+    setRoute(nextRoute);
   };
 
   if (checking) {
@@ -125,85 +192,110 @@ function App(): React.ReactElement {
 
   return (
     <div className="app">
-      {route !=="landing" &&(
-      <section className="app-shell">
-        <AppHeader />
+      {route !== "landing" && (
+        <section className="app-shell">
+          <AppHeader />
 
-        {mobileTab === "today" && <TodayPage />}
-        {mobileTab === "history" && <HistoryPage />}
-        {mobileTab === "profile" && (
-          <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
-        )}
+          {mobileTab === "today" && <TodayPage />}
+          {mobileTab === "history" && <HistoryPage />}
+          {mobileTab === "profile" && (
+            <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
+          )}
 
-        <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
-      </section>
+          <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+        </section>
       )}
+
       {route === "landing" ? (
-  <HomePage
-  onStartHere={() => {
-    setAuthMode("register");
-    setShowAuth(true);
-  }}
-/>
-) : (
-      <section className="backend-front-section">
-        <h2 className="backend-front-title">&lt;backend front&gt;</h2>
-    
-        <Header
-          user={user ?? undefined}
-          onLogin={handleLoginOpen}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
+        <HomePage
+          onStartHere={() => {
+            setAuthMode("register");
+            setShowAuth(true);
+            setRoute("auth");
+          }}
         />
+      ) : (
+        <section className="backend-front-section">
+          <h2 className="backend-front-title">&lt;backend front&gt;</h2>
 
-        <main className="app-main">
-          
-          {route === "home" &&
-            (user ? (
-              <>
-                <h1>Dashboard</h1>
+          <Header
+            user={user ?? undefined}
+            onLogin={handleLoginOpen}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+          />
 
-                <EntryForm
-                  onEntryCreated={() => {
-                    setInsightsRefreshKey((prev) => prev + 1);
-                  }}
-                />
+          <main className="app-main">
+            {route === "backend" &&
+              (user ? (
+                <>
+                  <h1>Dashboard</h1>
 
-                <hr style={{ margin: "2rem 0" }} />
+                  <EntryForm
+                    onEntryCreated={(text?: string) => {
+                      setInsightsRefreshKey((prev) => prev + 1);
 
-                <Insights />
-              </>
-            ) : (
-              <p>Welcome — please log in to continue.</p>
-            ))}
+                      if (typeof text === "string") {
+                        setLastEntryText(text);
+                      }
 
-          {route === "about" && <About />}
+                      try {
+                        window.dispatchEvent(
+                          new CustomEvent("insights.entry", {
+                            detail: { text: text || "" },
+                          }),
+                        );
+                      } catch (e) {}
+                    }}
+                  />
 
-          {route === "search" &&
-            (user ? (
-              <p>Search page placeholder</p>
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
+                  <hr style={{ margin: "2rem 0" }} />
 
-          {route === "auth" && !user && <p>Please log in to continue.</p>}
-          
-        </main>
+                  <Insights />
+                </>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
 
-      </section>
-)}
+            {route === "dialogues" &&
+              (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
+
+            {route === "tools" &&
+              (user ? (
+                <ToolsPage onClose={() => setRoute("dialogues")} />
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
+
+            {route === "about" && <About />}
+
+            {route === "search" &&
+              (user ? (
+                <p>Search page placeholder</p>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
+
+            {route === "auth" && !user && <p>Please log in to continue.</p>}
+          </main>
+        </section>
+      )}
+
       {showAuth && (
         <AuthModal
-          initialMode={authMode}
+          initialMode={authMode === "signup" ? "register" : authMode}
           disableClose={false}
-          onClose={() => {  
-              setShowAuth(false);
+          onClose={() => {
+            setShowAuth(false);
+
+            if (!user && route === "auth") {
+              setRoute("landing");
+            }
           }}
           onAuthed={handleAuthed}
         />
       )}
     </div>
-  
   );
 }
 

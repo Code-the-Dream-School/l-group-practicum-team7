@@ -1,6 +1,6 @@
 import { Activity, Info } from 'lucide-react';
-import type { Entry } from '../types/wellness';
-import { getRiskMessage } from '../utils/wellness';
+import type { Entry } from '../../types/wellness';
+import { getRiskMessage } from '../../utils/wellness';
 
 type RiskSummaryCardProps = {
   entry: Entry;
