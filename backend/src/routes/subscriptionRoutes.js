@@ -12,6 +12,17 @@ router.post('/demo-checkout', async (req, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    const cardLast4 = String(req.body?.payment?.last4 || '');
+    const demoResult = req.body?.demoResult;
+
+    if (demoResult === 'fail' || cardLast4 === '0002') {
+      return res.status(402).json({
+        error: 'Demo payment failed. Please use a successful demo card.',
+        premium: false,
+        status: 'failed',
+      });
+    }
+
     const orderId = `demo_${crypto.randomUUID()}`;
 
     const subscription = await Subscription.findOneAndUpdate(
@@ -25,7 +36,7 @@ router.post('/demo-checkout', async (req, res) => {
         amountCents: req.body.amountCents || 499,
         currency: req.body.currency || 'USD',
         paymentBrand: req.body.payment?.brand || 'demo-card',
-        paymentLast4: req.body.payment?.last4 || '',
+        paymentLast4: cardLast4,
       },
       { upsert: true, new: true }
     );

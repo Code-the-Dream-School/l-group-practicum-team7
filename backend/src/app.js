@@ -29,11 +29,13 @@ const app = express();
 
 app.use(helmet());
 
-const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN || "http://localhost:5173",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-];
+const allowedOrigins = (process.env.CLIENT_ORIGINS ||
+  process.env.FRONTEND_ORIGIN ||
+  'http://localhost:5173,http://localhost:5174')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 
 const corsOptions = {
   origin(origin, callback) {
@@ -48,14 +50,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors({
-  origin: ['http://localhost:5174', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("dev"));

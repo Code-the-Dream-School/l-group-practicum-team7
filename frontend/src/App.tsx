@@ -15,6 +15,7 @@ import BottomNav, { type MobileTab } from './components/Layout/BottomNav';
 import TodayPage from './pages/TodayPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
+import { clearToolDialogueStorage } from './utils/clearToolDialogueStorage';
 
 import './App.css';
 import './styles/App.css';
@@ -48,7 +49,7 @@ type User = {
 
 type MeResponse = Record<string, unknown>;
 
-function App(): React.ReactElement {
+function App(): React.ReactElement {  
   const [checking, setChecking] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
@@ -59,17 +60,7 @@ function App(): React.ReactElement {
   const [lastEntryText, setLastEntryText] = useState<string>('');
   const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string>('');
-  const [isPremium, setIsPremium] = useState<boolean>(() => {
-    const raw = localStorage.getItem('premiumStatus');
-
-    if (!raw) return false;
-
-    try {
-      return JSON.parse(raw)?.status === 'active';
-    } catch {
-      return false;
-    }
-  });
+  const [isPremium, setIsPremium] = useState<boolean>(false);
   useEffect(() => {
       const onOpenTools = () => {
         const token = localStorage.getItem('token');
@@ -99,11 +90,11 @@ function App(): React.ReactElement {
         setRoute('checkout');
       };
 
-      const onCheckoutSuccess = (event: Event) => {
+      const onCheckoutSuccess = async (event: Event) => {
         const customEvent = event as CustomEvent<{ orderId?: string }>;
 
         setLastOrderId(customEvent.detail?.orderId || '');
-        setIsPremium(true);
+        await syncPremiumStatus();
         setRoute('checkout_success');
       };
 
@@ -150,6 +141,7 @@ function App(): React.ReactElement {
         .then((userData) => {
           setUser({ ...userData, token });
           setRoute('backend');
+          syncPremiumStatus(token);
         })
         .catch((error) => {
           if (controller.signal.aborted) {
@@ -157,6 +149,8 @@ function App(): React.ReactElement {
           }
 
           localStorage.removeItem('token');
+          localStorage.removeItem('premiumStatus');
+          setIsPremium(false);
           setUser(null);
           setRoute('auth');
           setAuthMode('login');
@@ -173,36 +167,73 @@ function App(): React.ReactElement {
       };
     }, []);
 
-  const handleAuthed = (userData: User | null): void => {
-    setUser(userData);
+    async function syncPremiumStatus(token?: string) {
+      const activeToken = token || localStorage.getItem('token');
 
-    if (userData?.token) {
-      localStorage.setItem('token', userData.token);
+      if (!activeToken) {
+        setIsPremium(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API}/api/subscription/me`, {
+          headers: {
+            Authorization: `Bearer ${activeToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          setIsPremium(false);
+          return;
+        }
+
+        const data = await response.json();
+
+        setIsPremium(data?.premium === true);
+      } catch {
+        setIsPremium(false);
+      }
     }
 
-    setShowAuth(false);
+const handleAuthed = (userData: User | null): void => {
+  setUser(userData);
 
-    if (pendingRoute) {
-      setRoute(pendingRoute);
-      setPendingRoute(null);
-    } else {
-      setRoute('backend');
-    }
-  };
+  if (userData?.token) {
+    localStorage.setItem('token', userData.token);
+    syncPremiumStatus(userData.token);
+  }
 
-  const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode || 'login');
-    setShowAuth(true);
-    setRoute('auth');
-  };
+  window.dispatchEvent(new Event('authChanged'));
+  setShowAuth(false);
+
+  if (pendingRoute) {
+    setRoute(pendingRoute);
+    setPendingRoute(null);
+  } else {
+    setRoute('backend');
+  }
+};
+
+const handleLoginOpen = (mode?: AuthMode): void => {
+  setAuthMode(mode || 'login');
+  setShowAuth(true);
+  setRoute('auth');
+};
 
   const handleLogout = (): void => {
     localStorage.removeItem('token');
+    localStorage.removeItem('premiumStatus');
+    setIsPremium(false);
+    clearToolDialogueStorage();
+
     setUser(null);
+    setIsPremium(false);
     setPendingRoute(null);
     setRoute('auth');
     setAuthMode('login');
     setShowAuth(true);
+
+    window.dispatchEvent(new Event('authChanged'));
   };
 
   const handleNavigate = (nextRoute: Route): void => {
@@ -250,9 +281,9 @@ function App(): React.ReactElement {
 
         {route === 'checkout' && user && (
           <CheckoutPage
-            onSuccess={(orderId) => {
+            onSuccess={async (orderId) => {
               setLastOrderId(orderId);
-              setIsPremium(true);
+              await syncPremiumStatus();
               setRoute('checkout_success');
             }}
             onCancel={() => {

@@ -48,14 +48,6 @@ function detectBrand(cardNumber: string): string {
   return 'demo-card';
 }
 
-function createDemoOrderId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `demo_${Date.now()}`;
-}
-
 export default function CheckoutPage({ onSuccess, onCancel }: CheckoutPageProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -83,76 +75,74 @@ export default function CheckoutPage({ onSuccess, onCancel }: CheckoutPageProps)
       return;
     }
 
-    const cardBrand = detectBrand(cardNumber);
-    const cardLast4 = cardNumber.slice(-4);
-    const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
-    const payload = {
-      planId: premiumPlan.id,
-      planName: premiumPlan.name,
-      amountCents: premiumPlan.amountCents,
-      currency: premiumPlan.currency,
-      demo: true,
-      paymentStatus: 'success',
-      payment: {
-        brand: cardBrand,
-        last4: cardLast4,
+  if (!token) {
+    setMessage('Please log in before buying premium.');
+    setLoading(false);
+    return;
+  }
+
+  const cardBrand = detectBrand(cardNumber);
+  const cardLast4 = cardNumber.slice(-4);
+  const shouldFailDemoPayment = cardLast4 === '0002';
+
+  const payload = {
+    planId: premiumPlan.id,
+    planName: premiumPlan.name,
+    amountCents: premiumPlan.amountCents,
+    currency: premiumPlan.currency,
+    demo: true,
+    demoResult: shouldFailDemoPayment ? 'fail' : 'success',
+    payment: {
+      brand: cardBrand,
+      last4: cardLast4,
+    },
+  };
+
+  try {
+    const response = await fetch(`${API}/api/subscription/demo-checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-    };
+      body: JSON.stringify(payload),
+    });
 
-    try {
-      let orderId = createDemoOrderId();
+    const data = await response.json().catch(() => ({}));
 
-      if (token) {
-        const response = await fetch(`${API}/api/subscription/demo-checkout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          const data = await response.json().catch(() => ({}));
-          orderId = data.orderId || data.id || orderId;
-        }
-      }
-
-      localStorage.setItem(
-        'premiumStatus',
-        JSON.stringify({
-          planId: premiumPlan.id,
-          status: 'active',
-          demo: true,
-          orderId,
-          activatedAt: new Date().toISOString(),
-          payment: {
-            brand: cardBrand,
-            last4: cardLast4,
-          },
-        })
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || 'Demo checkout failed. Please try again.'
       );
-
-      if (onSuccess) {
-        onSuccess(orderId);
-        return;
-      }
-
-      window.dispatchEvent(
-        new CustomEvent('checkoutSuccess', {
-          detail: { orderId },
-        })
-      );
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Demo checkout failed. Please try again.'
-      );
-    } finally {
-      setLoading(false);
     }
+
+    if (data.premium !== true || data.status !== 'active' || !data.orderId) {
+      throw new Error('Backend did not confirm premium activation.');
+    }
+
+    sessionStorage.setItem('lastCheckoutOrderId', data.orderId);
+
+    if (onSuccess) {
+      onSuccess(data.orderId);
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('checkoutSuccess', {
+        detail: { orderId: data.orderId },
+      })
+    );
+  } catch (error) {
+    setMessage(
+      error instanceof Error
+        ? error.message
+        : 'Demo checkout failed. Please try again.'
+    );
+  } finally {
+    setLoading(false);
+  }
   }
 
   return (
