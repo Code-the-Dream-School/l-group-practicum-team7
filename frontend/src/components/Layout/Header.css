@@ -6,3 +6,20 @@
 .home-btn button,.about-btn,.search-btn{background:#0b63f6;color:#fff;padding:12px 24px;border-radius:28px;border:0}
 .actions button.auth{background:#0b63f6;color:#fff;padding:10px 20px;border-radius:20px;border:0}
 .header-spacer {width: 90px;}
+
+.nav {
+  background: #0b63f6;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+
+  border: none;              
+  outline: none;             
+
+  cursor: pointer;
+  font-weight: 500;
+
+  margin: 0 6px;            
+
+  display: inline-block;
+}

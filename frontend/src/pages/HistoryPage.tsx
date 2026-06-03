@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   Battery,
@@ -24,7 +24,7 @@ type Entry = {
 
 type FilterMode = '7' | '30' | 'custom';
 
-function toDateInputValue(date: Date) {
+function toIsoDateValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -32,22 +32,52 @@ function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function getDateRange(mode: FilterMode, from: string, to: string) {
-  if (mode === 'custom') {
-    return { from, to };
+function parseUsDateInput(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) return '';
+
+  const match = trimmed.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+
+  if (!match) return '';
+
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) {
+    return '';
   }
 
-  const start = new Date();
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return '';
+  }
+
+  return toIsoDateValue(date);
+}
+
+function getDateRange(mode: FilterMode, from: string, to: string) {
+  if (mode === 'custom') {
+    return {
+      from: parseUsDateInput(from),
+      to: parseUsDateInput(to),
+    };
+  }
+
   const end = new Date();
+  const start = new Date();
 
   start.setDate(end.getDate() - Number(mode) + 1);
 
-  const tomorrow = new Date(end);
-  tomorrow.setDate(end.getDate() + 1);
-
   return {
-    from: toDateInputValue(start),
-    to: toDateInputValue(tomorrow),
+    from: toIsoDateValue(start),
+    to: toIsoDateValue(end),
   };
 }
 
@@ -70,6 +100,31 @@ function formatTime(value?: string) {
   });
 }
 
+function normalizeEntries(data: unknown): Entry[] {
+  if (Array.isArray(data)) {
+    return data as Entry[];
+  }
+
+  if (!data || typeof data !== 'object') {
+    return [];
+  }
+
+  const record = data as {
+    entries?: Entry[];
+    data?: Entry[];
+  };
+
+  if (Array.isArray(record.entries)) {
+    return record.entries;
+  }
+
+  if (Array.isArray(record.data)) {
+    return record.data;
+  }
+
+  return [];
+}
+
 function HistoryPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,13 +132,14 @@ function HistoryPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>('7');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [authRefreshKey, setAuthRefreshKey] = useState(0);
 
   const range = useMemo(
     () => getDateRange(filterMode, from, to),
     [filterMode, from, to]
   );
 
-  async function loadEntries() {
+  const loadEntries = useCallback(async () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -102,7 +158,12 @@ function HistoryPage() {
     if (range.to) params.set('to', range.to);
 
     try {
-      const response = await fetch(`${API}/api/entries?${params.toString()}`, {
+      const queryString = params.toString();
+      const url = queryString
+        ? `${API}/api/entries?${queryString}`
+        : `${API}/api/entries`;
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -111,17 +172,17 @@ function HistoryPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to load entries');
+        throw new Error(data.message || data.error || 'Failed to load entries');
       }
 
-      setEntries(Array.isArray(data) ? data : []);
+      setEntries(normalizeEntries(data));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load entries');
       setEntries([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, [range.from, range.to]);
 
   async function deleteEntry(id: string) {
     const token = localStorage.getItem('token');
@@ -151,8 +212,24 @@ function HistoryPage() {
   }
 
   useEffect(() => {
+    const refreshAfterAuthChange = () => {
+      setAuthRefreshKey((current) => current + 1);
+    };
+
+    window.addEventListener('authChanged', refreshAfterAuthChange);
+    window.addEventListener('storage', refreshAfterAuthChange);
+    window.addEventListener('focus', refreshAfterAuthChange);
+
+    return () => {
+      window.removeEventListener('authChanged', refreshAfterAuthChange);
+      window.removeEventListener('storage', refreshAfterAuthChange);
+      window.removeEventListener('focus', refreshAfterAuthChange);
+    };
+  }, []);
+
+  useEffect(() => {
     loadEntries();
-  }, [range.from, range.to]);
+  }, [loadEntries, authRefreshKey]);
 
   return (
     <main className="mobile-page history-page" aria-label="History page">
@@ -191,15 +268,21 @@ function HistoryPage() {
           {filterMode === 'custom' && (
             <div className="date-filter-fields">
               <input
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder="MM/DD/YYYY"
                 value={from}
                 onChange={(event) => setFrom(event.target.value)}
+                aria-label="Start date in MM/DD/YYYY format"
               />
 
               <input
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder="MM/DD/YYYY"
                 value={to}
                 onChange={(event) => setTo(event.target.value)}
+                aria-label="End date in MM/DD/YYYY format"
               />
             </div>
           )}
@@ -223,10 +306,11 @@ function HistoryPage() {
                   <div className="history-card-header">
                     <div className="history-date">
                       <CalendarDays size={17} aria-hidden="true" />
-                        <div className="history-date-text">
-                          <strong>{formatDate(displayDate)}</strong>
-                          <span>{formatTime(displayDate)}</span>
-                        </div>
+
+                      <div className="history-date-text">
+                        <strong>{formatDate(displayDate)}</strong>
+                        <span>{formatTime(displayDate)}</span>
+                      </div>
                     </div>
 
                     <button

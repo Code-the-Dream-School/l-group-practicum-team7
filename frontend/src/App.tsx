@@ -1,38 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-import AuthModal from './components/Auth/AuthModal';
-import Header from './components/Layout/Header';
-import About from './pages/About';
-import Insights from './components/Insights/Insights';
-import EntryForm from './components/Forms/EntryForm';
-import ToolsPage from './pages/ToolsPage';
-import NovelPage from './pages/NovelPage';
+import AuthModal from "./components/Auth/AuthModal";
+import Header from "./components/Layout/Header";
+import About from "./pages/About";
+import Insights from "./components/Insights/Insights";
+import EntryForm from "./components/Forms/EntryForm";
+import ToolsPage from "./pages/ToolsPage";
+import NovelPage from "./pages/NovelPage";
+import HomePage from "./pages/Home";
 import CheckoutPage from './pages/CheckoutPage';
 import CheckoutPageSuccess from './pages/CheckoutPageSuccess';
 
-import AppHeader from './components/Layout/AppHeader';
-import BottomNav, { type MobileTab } from './components/Layout/BottomNav';
-import TodayPage from './pages/TodayPage';
-import HistoryPage from './pages/HistoryPage';
-import ProfilePage from './pages/ProfilePage';
+import AppHeader from "./components/Layout/AppHeader";
+import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
+import TodayPage from "./pages/TodayPage";
+import HistoryPage from "./pages/HistoryPage";
+import ProfilePage from "./pages/ProfilePage";
 import { clearToolDialogueStorage } from './utils/clearToolDialogueStorage';
 
-import './App.css';
-import './styles/App.css';
+import "./App.css";
+import "./styles/App.css";
 
-const API: string = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = "login" | "register" | "signup";
 
 type Route =
-  | 'backend'
-  | 'about'
-  | 'search'
-  | 'auth'
-  | 'tools'
-  | 'insights'
-  | 'dialogues'
-  | 'novel'
+  | "backend"
+  | "about"
+  | "search"
+  | "auth"
+  | "tools"
+  | "insights"
+  | "dialogues"
+  | "novel"
+  | "landing"
   | 'checkout'
   | 'checkout_success';
 
@@ -53,28 +55,28 @@ function App(): React.ReactElement {
   const [checking, setChecking] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [route, setRoute] = useState<Route>('backend');
-  const [mobileTab, setMobileTab] = useState<MobileTab>('today');
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [route, setRoute] = useState<Route>("landing");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("today");
   const [, setInsightsRefreshKey] = useState<number>(0);
-  const [lastEntryText, setLastEntryText] = useState<string>('');
+  const [lastEntryText, setLastEntryText] = useState<string>("");
   const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
   const [lastOrderId, setLastOrderId] = useState<string>('');
   const [isPremium, setIsPremium] = useState<boolean>(false);
   useEffect(() => {
-      const onOpenTools = () => {
-        const token = localStorage.getItem('token');
+        const onOpenTools = () => {
+          const token = localStorage.getItem("token");
 
-        if (!token) {
-          setPendingRoute('tools');
-          setAuthMode('login');
-          setShowAuth(true);
-          setRoute('auth');
-          return;
-        }
+          if (!token) {
+            setPendingRoute("tools");
+            setAuthMode("login");
+            setShowAuth(true);
+            setRoute("auth");
+            return;
+          }
 
-        setRoute('tools');
-      };
+          setRoute("tools");
+        };
 
       const onOpenCheckout = () => {
         const token = localStorage.getItem('token');
@@ -98,7 +100,7 @@ function App(): React.ReactElement {
         setRoute('checkout_success');
       };
 
-      window.addEventListener('openTools', onOpenTools);
+        window.addEventListener("openTools", onOpenTools);
       window.addEventListener('openCheckout', onOpenCheckout);
       window.addEventListener('checkoutSuccess', onCheckoutSuccess);
 
@@ -111,30 +113,30 @@ function App(): React.ReactElement {
 
     useEffect(() => {
       const controller = new AbortController();
-      const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
 
-      if (!token) {
-        setUser(null);
-        setChecking(false);
-        setRoute('auth');
-        setAuthMode('login');
-        setShowAuth(true);
+        if (!token) {
+          setUser(null);
+          setChecking(false);
+          setRoute("landing");
+          setAuthMode("login");
+          setShowAuth(false);
 
         return () => {
           controller.abort();
         };
       }
 
-      fetch(`${API}/api/auth/me`, {
+        fetch(`${API}/api/auth/me`, {
         signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('not authed');
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("not authed");
+            }
 
           return response.json() as Promise<MeResponse>;
         })
@@ -162,41 +164,13 @@ function App(): React.ReactElement {
           }
         });
 
-      return () => {
-        controller.abort();
-      };
-    }, []);
+  return () => {
+    window.removeEventListener('openTools', onOpenTools);
+  };
+}, []);
 
-    async function syncPremiumStatus(token?: string) {
-      const activeToken = token || localStorage.getItem('token');
-
-      if (!activeToken) {
-        setIsPremium(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API}/api/subscription/me`, {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          setIsPremium(false);
-          return;
-        }
-
-        const data = await response.json();
-
-        setIsPremium(data?.premium === true);
-      } catch {
-        setIsPremium(false);
-      }
-    }
-
-const handleAuthed = (userData: User | null): void => {
-  setUser(userData);
+  const handleAuthed = (userData: User | null): void => {
+    setUser(userData);
 
   if (userData?.token) {
     localStorage.setItem('token', userData.token);
@@ -229,37 +203,37 @@ const handleLoginOpen = (mode?: AuthMode): void => {
     setUser(null);
     setIsPremium(false);
     setPendingRoute(null);
-    setRoute('auth');
-    setAuthMode('login');
-    setShowAuth(true);
+    setRoute("landing");
+    setAuthMode("login");
+    setShowAuth(false);
 
     window.dispatchEvent(new Event('authChanged'));
   };
 
   const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== 'about') {
+    if (!user && nextRoute !== "about" && nextRoute !== "landing") {
       setPendingRoute(nextRoute);
-      setAuthMode('login');
+      setAuthMode("login");
       setShowAuth(true);
-      setRoute('auth');
+      setRoute("auth");
       return;
     }
 
-    if (nextRoute === 'insights') {
+    if (nextRoute === "insights") {
       try {
         window.dispatchEvent(
-          new CustomEvent('insights.entry', {
+          new CustomEvent("insights.entry", {
             detail: { text: lastEntryText },
-          })
+          }),
         );
       } catch (e) {}
 
-      setRoute('backend');
+      setRoute("backend");
       return;
     }
 
-    if (nextRoute === 'novel') {
-      setRoute('dialogues');
+    if (nextRoute === "novel") {
+      setRoute("dialogues");
       return;
     }
 
@@ -276,8 +250,9 @@ const handleLoginOpen = (mode?: AuthMode): void => {
 
   return (
     <div className="app">
-      <section className="app-shell">
-        <AppHeader />
+      {route !== "landing" && (
+        <section className="app-shell">
+          <AppHeader />
 
         {route === 'checkout' && user && (
           <CheckoutPage
@@ -305,89 +280,106 @@ const handleLoginOpen = (mode?: AuthMode): void => {
 
         {route !== 'checkout' && route !== 'checkout_success' && (
           <>
-            {mobileTab === 'today' && <TodayPage />}
-            {mobileTab === 'history' && <HistoryPage />}
-            {mobileTab === 'profile' && (
-              <ProfilePage
+              {mobileTab === "today" && <TodayPage />}
+              {mobileTab === "history" && <HistoryPage />}
+              {mobileTab === "profile" && (
+                <ProfilePage
                 user={user ?? undefined}
                 onLogout={handleLogout}
                 isPremium={isPremium}
                 onOpenCheckout={() => setRoute('checkout')}
               />
-            )}
+              )}
 
-            <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
+              <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
           </>
         )}
-      </section>
+        </section>
+      )}
 
-      <section className="backend-front-section">
-        <h2 className="backend-front-title">&lt;backend front&gt;</h2>
-
-        <Header
-          user={user ?? undefined}
-          onLogin={handleLoginOpen}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
+      {route === "landing" ? (
+        <HomePage
+          onStartHere={() => {
+            setAuthMode("register");
+            setShowAuth(true);
+            setRoute("auth");
+          }}
         />
+      ) : (
+        <section className="backend-front-section">
+          <h2 className="backend-front-title">&lt;backend front&gt;</h2>
 
-        <main className="app-main">
-          {route === 'backend' &&
-            (user ? (
-              <>
-                <h1>Dashboard</h1>
+          <Header
+            user={user ?? undefined}
+            onLogin={handleLoginOpen}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+          />
 
-                <EntryForm
-                  onEntryCreated={(text?: string) => {
-                    setInsightsRefreshKey((prev) => prev + 1);
+          <main className="app-main">
+            {route === "backend" &&
+              (user ? (
+                <>
+                  <h1>Dashboard</h1>
 
-                    if (typeof text === 'string') {
-                      setLastEntryText(text);
-                    }
+                  <EntryForm
+                    onEntryCreated={(text?: string) => {
+                      setInsightsRefreshKey((prev) => prev + 1);
 
-                    try {
-                      window.dispatchEvent(
-                        new CustomEvent('insights.entry', {
-                          detail: { text: text || '' },
-                        })
-                      );
-                    } catch (e) {}
-                  }}
-                />
+                      if (typeof text === "string") {
+                        setLastEntryText(text);
+                      }
 
-                <hr style={{ margin: '2rem 0' }} />
+                      try {
+                        window.dispatchEvent(
+                          new CustomEvent("insights.entry", {
+                            detail: { text: text || "" },
+                          }),
+                        );
+                      } catch (e) {}
+                    }}
+                  />
 
-                <Insights />
-              </>
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
-          {route === 'dialogues' &&
-            (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
+                  <hr style={{ margin: "2rem 0" }} />
 
-          {route === 'tools' &&
-            (user ? <ToolsPage /> : <p>Please log in to continue.</p>)}
+                  <Insights />
+                </>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
+            {route === "dialogues" &&
+              (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
 
-          {route === 'about' && <About />}
+            {route === "tools" &&
+              (user ? (
+                <ToolsPage onClose={() => setRoute("dialogues")} />
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
 
-          {route === 'search' &&
-            (user ? (
-              <p>Search page placeholder</p>
-            ) : (
-              <p>Please log in to continue.</p>
-            ))}
+            {route === "about" && <About />}
 
-          {route === 'auth' && !user && <p>Please log in to continue.</p>}
-        </main>
-      </section>
+            {route === "search" &&
+              (user ? (
+                <p>Search page placeholder</p>
+              ) : (
+                <p>Please log in to continue.</p>
+              ))}
+
+            {route === "auth" && !user && <p>Please log in to continue.</p>}
+          </main>
+        </section>
+      )}
 
       {showAuth && (
         <AuthModal
-          initialMode={authMode}
-          disableClose={!user}
+          initialMode={authMode === "signup" ? "register" : authMode}
+          disableClose={false}
           onClose={() => {
-            if (user) {
-              setShowAuth(false);
+            setShowAuth(false);
+
+            if (!user && route === "auth") {
+              setRoute("landing");
             }
           }}
           onAuthed={handleAuthed}

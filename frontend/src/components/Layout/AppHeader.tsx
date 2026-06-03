@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Activity, Plus } from 'lucide-react';
-import DailyLogForm from '../Forms/DailyLogForm';
+import { useState } from "react";
+import { Activity, Plus } from "lucide-react";
+import DailyLogForm from "../Forms/DailyLogForm";
+
+const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 interface DailyLogData {
   stress: number;
-  mood: number;
   sleepHours: number;
   energy: number;
   workload: number;
@@ -57,15 +58,25 @@ function AppHeader() {
           <span className="brand-mark">
             <Activity aria-hidden="true" />
           </span>
+
           <span>PulseMind</span>
         </div>
-        <button className="add-entry" type="button" onClick={() => setIsDailyLogOpen(!isDailyLogOpen)} aria-label="Add new entry">
+
+        <button
+          className="add-entry"
+          type="button"
+          onClick={() => setIsDailyLogOpen(true)}
+          aria-label="Add new entry"
+        >
           <Plus aria-hidden="true" />
         </button>
       </header>
-      
+
       {isDailyLogOpen && (
-        <DailyLogForm onSave={handleSave} onClose={() => setIsDailyLogOpen(false)} />
+        <DailyLogForm
+          onSave={handleSave}
+          onClose={() => setIsDailyLogOpen(false)}
+        />
       )}
     </>
   );

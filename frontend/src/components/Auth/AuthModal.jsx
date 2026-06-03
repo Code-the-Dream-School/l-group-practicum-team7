@@ -3,7 +3,12 @@ import "./AuthModal.css";
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
-export default function AuthModal({ onClose, onAuthed, disableClose=false, initialMode='login' }) {
+export default function AuthModal({
+  onClose,
+  onAuthed,
+  disableClose = false,
+  initialMode = "login",
+}) {
   const normalizedInitialMode = initialMode === 'signup' ? 'register' : initialMode;
   const [mode, setMode] = useState(normalizedInitialMode || 'login');
   const [pending, setPending] = useState(false);
@@ -66,18 +71,35 @@ export default function AuthModal({ onClose, onAuthed, disableClose=false, initi
   };
 
   return (
-    <div className="auth-overlay" onClick={() => { if (!disableClose) onClose?.(); }}>
+    <div
+      className="auth-overlay"
+      onClick={() => {
+        if (!disableClose) onClose?.();
+      }}
+    >
       <div className="auth-card" onClick={(e) => e.stopPropagation()}>
-        {!disableClose && <button className="close" onClick={onClose}>X</button>}
+        {!disableClose && (
+          <button className=" modal-close" onClick={onClose}>
+            X
+          </button>
+        )}
 
         <div className="auth-header">
+          
           {mode === "login"
+           
             ? "Login"
+           
             : mode === "register"
+             
               ? "Sign Up"
+             
               : mode === "forgot"
+               
                 ? "Forgot password?"
+               
                 : "Reset password"}
+        
         </div>
         {mode === "forgot" ? (
           <form onSubmit={handleForgot} className="auth-form">
@@ -86,8 +108,12 @@ export default function AuthModal({ onClose, onAuthed, disableClose=false, initi
               <input name="email" type="email" required />
             </label>
             <div className="actions">
-              <button type="submit" disabled={pending} className="primary">{pending ? "..." : "Send Reset Link"}</button>
-              <button type="button" onClick={() => setMode("login")}>Back to Login</button>
+              <button type="submit" disabled={pending} className="primary">
+                {pending ? "..." : "Send Reset Link"}
+              </button>
+              <button type="button" onClick={() => setMode("login")}>
+                Back to Login
+              </button>
             </div>
           </form>
         ) : (
@@ -132,13 +158,17 @@ export default function AuthModal({ onClose, onAuthed, disableClose=false, initi
               )}
               {error && <div className="flash error">{error}</div>}
               <div className="actions">
-                <button type="submit" disabled={pending} className="primary">{pending ? "..." : mode === "login" ? "Login" : "SignUp"}</button>
+                <button type="submit" disabled={pending} className="primary">
+                  {pending ? "..." : mode === "login" ? "Login" : "SignUp"}
+                </button>
               </div>
             </form>
 
             <div className="aux">
               {mode === "login" && (
-                <button className="link" onClick={() => setMode("forgot")}>Forgot password</button>
+                <button className="link" onClick={() => setMode("forgot")}>
+                  Forgot password
+                </button>
               )}
             </div>
           </>
