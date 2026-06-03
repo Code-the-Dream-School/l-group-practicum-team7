@@ -1,0 +1,271 @@
+# PulseMind Tools
+
+This file is documentation only. The app should use `toolDefinitions.js` as the source of truth.
+
+All tool ids must use snake_case and must match the keys in `toolDefinitions.js`.
+Do not use kebab-case ids like `thought-dump`.
+Do not duplicate old instructions here if they differ from `toolDefinitions.js`.
+
+## breathing
+
+Name: Breathing
+Type: timer
+Duration seconds: 60
+
+Instruction:
+Take 1 minute. Breathe in slowly, pause for a moment, then breathe out longer than you breathed in. Repeat 5 times.
+
+Sample entry:
+I breathed slowly for 1 minute. My body feels a little calmer.
+
+## grounding
+
+Name: Grounding
+Type: fields
+
+Instruction:
+Look around and notice what you can see, feel, hear, smell, and taste or sense in your body.
+
+Fields:
+- I see
+- I feel
+- I hear
+- I smell
+- I taste / notice
+
+Sample entry:
+I see my desk, screen, cup, wall, and window.
+I feel my feet on the floor.
+I hear the fan.
+I smell coffee.
+I taste water.
+
+## thought_dump
+
+Name: Thought Dump
+Type: fields
+
+Instruction:
+Write down 3 worries without trying to solve them right now.
+
+Fields:
+- I worry
+- I worry
+- I worry
+
+Sample entry:
+I worry about deadlines.
+I worry about my project.
+I worry that I am falling behind.
+
+## over_responsibility
+
+Name: Working with Over-Responsibility
+Type: fields
+
+Instruction:
+Write one task you feel responsible for, name the reality, and choose what you can refuse.
+
+Fields:
+- Task
+- Reality
+- I refuse
+- Because
+
+Sample entry:
+Task: Fix everything today.
+Reality: This is partly mine. I can do one part today, not everything.
+I refuse to take responsibility for everything because this is not fully mine.
+
+## strategic_refusal
+
+Name: Strategic Refusal
+Type: fields
+
+Instruction:
+Write one unrealistic, outdated, or unachievable task you should not continue doing. Explain why refusing it protects your real priorities.
+
+Fields:
+- Unachievable task
+- Reality
+- I need to refuse
+
+Sample entry:
+Unachievable task: I wanted to program, work delivery shifts, and learn Chinese at the same time.
+Reality: I cannot realistically do all of that right now.
+I need to refuse learning Chinese for now because programming and work are higher priorities.
+
+## prioritization
+
+Name: Prioritization
+Type: priority
+Rows: 3
+
+Instruction:
+Write 3 tasks. Mark each one as urgent or not urgent, and important or not important.
+
+Options:
+- Urgent / Not urgent
+- Important / Not important
+
+Sample entry:
+Task 1: Submit assignment — urgent, important.
+Task 2: Clean files — not urgent, not important.
+Task 3: Fix login bug — not urgent, important.
+
+## asking_for_support
+
+Name: Asking for Support
+Type: fields
+
+Instruction:
+Write what you need help with and who you asked.
+
+Fields:
+- I need help with
+- I asked
+
+Sample entry:
+I need help with understanding the project structure.
+I asked my teammate to explain the main files.
+
+## future_me_letter
+
+Name: Future Me Letter
+Type: textarea
+
+Instruction:
+Write 3–5 sentences to your future self about what you are working for and what you should protect today.
+
+Sample entry:
+Dear future me, I am working to build a stable life. I do not need to destroy myself to get there. Today I will protect my health and take one real step.
+
+## five_minute_pause
+
+Name: 5-Minute Pause
+Type: timer
+Duration seconds: 300
+
+Instruction:
+Pause for 5 minutes. Do not fix anything. Just notice what you feel in your body and mind.
+
+Sample entry:
+I paused for 5 minutes. I feel tension in my chest and pressure in my head, but I do not need to act immediately.
+
+## five_minute_task
+
+Name: 5-Minute Task
+Type: timer
+Duration seconds: 300
+
+Instruction:
+Pick one tiny task you can do in 5 minutes. Stop when the timer ends, even if it is not perfect.
+
+Sample entry:
+Task: Open the project and find the broken component.
+Result: I found the file. That is enough for now.
+
+## evening_release
+
+Name: Evening Release
+Type: fields
+
+Instruction:
+Write what you are worried about, what can wait until tomorrow, and what you will do next.
+
+Fields:
+- I worry about
+- It can wait until tomorrow
+- Tomorrow I will
+
+Sample entry:
+I worry about finishing the whole project tonight.
+It can wait until tomorrow: debugging the whole thing.
+Tomorrow I will check one error first.
+
+## letter_to_tomorrow_me
+
+Name: Letter to Tomorrow Me
+Type: textarea
+
+Instruction:
+Write a short note giving tomorrow’s version of you the next step.
+
+Sample entry:
+Tomorrow me, start with the API error. You do not need to fix everything at once. Just check the first failing request.
+
+## tomorrow_list
+
+Name: Tomorrow List
+Type: fields
+
+Instruction:
+Write one thing you can do tomorrow and one thing you can safely postpone.
+
+Fields:
+- Tomorrow I can
+- I can safely postpone
+
+Sample entry:
+Tomorrow I can finish one assignment section.
+I can safely postpone redesigning the whole interface.
+
+## light_mode
+
+Name: Light Mode
+Type: fields
+
+Instruction:
+Write the full task, then choose the smallest achievable part.
+
+Fields:
+- Full task
+- Achievable part
+
+Sample entry:
+Full task: finish the whole page.
+Achievable part: make the page open without crashing.
+
+## body_reset
+
+Name: Body Reset
+Type: timer
+Duration seconds: 120
+
+Instruction:
+Drink water, eat something simple, and move for 2 minutes.
+
+Sample entry:
+I drank water, ate a snack, and walked around the room. I feel slightly more awake.
+
+## future_sentence
+
+Name: Future Sentence
+Type: fields
+
+Instruction:
+Complete the sentence: “Doing this helps my future because…”
+
+Fields:
+- Doing this helps my future because
+
+Sample entry:
+Doing this helps my future because finishing this project moves me closer to practice and work.
+
+## three_good_things
+
+Name: Three Good Things
+Type: fields
+
+Instruction:
+Write three small good things. They can be very small.
+
+Fields:
+- Good thing
+- Good thing
+- Good thing
+
+Sample entry:
+Good thing 1: I cleaned my desk.
+Good thing 2: I went for a walk.
+Good thing 3: I asked for help instead of giving up.
