@@ -261,8 +261,8 @@ export default function ToolsPage() {
       } catch (e) {}
     }
 
-    loadUnlockedTools();
-
+    loadUnlocked();
+    
     const handler = (e) => {
       const token = localStorage.getItem('token');
 

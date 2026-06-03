@@ -100,7 +100,7 @@ function App(): React.ReactElement {
         setRoute('checkout_success');
       };
 
-        window.addEventListener("openTools", onOpenTools);
+      window.addEventListener("openTools", onOpenTools);
       window.addEventListener('openCheckout', onOpenCheckout);
       window.addEventListener('checkoutSuccess', onCheckoutSuccess);
 
@@ -163,11 +163,35 @@ function App(): React.ReactElement {
             setChecking(false);
           }
         });
-
-  return () => {
-    window.removeEventListener('openTools', onOpenTools);
-  };
 }, []);
+
+  async function syncPremiumStatus(token?: string) {
+      const activeToken = token || localStorage.getItem('token');
+
+      if (!activeToken) {
+        setIsPremium(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API}/api/subscription/me`, {
+          headers: {
+            Authorization: `Bearer ${activeToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          setIsPremium(false);
+          return;
+        }
+
+        const data = await response.json();
+
+        setIsPremium(data?.premium === true);
+      } catch {
+        setIsPremium(false);
+      }
+    }
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -350,12 +374,12 @@ const handleLoginOpen = (mode?: AuthMode): void => {
             {route === "dialogues" &&
               (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
 
-            {route === "tools" &&
-              (user ? (
-                <ToolsPage onClose={() => setRoute("dialogues")} />
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
+              {route === "tools" &&
+                (user ? (
+                  <ToolsPage />
+                ) : (
+                  <p>Please log in to continue.</p>
+                ))}
 
             {route === "about" && <About />}
 
