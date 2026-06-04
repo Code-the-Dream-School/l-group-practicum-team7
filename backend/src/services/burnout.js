@@ -1,4 +1,5 @@
 const getSleepScore = (hours) => {
+  if (hours === undefined || hours === null) return 3;
   if (hours >= 8) return 5;
   if (hours >= 7) return 4;
   if (hours >= 6) return 3;
@@ -6,12 +7,13 @@ const getSleepScore = (hours) => {
   return 1;
 };
 
-const calculateBurnout = ({ stress, workload, sleepScore, energy }) => {
-  const rawScore =
-    0.4 * stress +
-    0.3 * workload +
-    0.2 * (5 - sleepScore) +
-    0.1 * (5 - energy);
+const calculateBurnout = ({ stress, workload, sleepScore, energy } = {}) => {
+  const s = typeof stress === "number" ? stress : 3;
+  const w = typeof workload === "number" ? workload : 3;
+  const sl = typeof sleepScore === "number" ? sleepScore : 3;
+  const e = typeof energy === "number" ? energy : 3;
+
+  const rawScore = 0.4 * s + 0.3 * w + 0.2 * (5 - sl) + 0.1 * (5 - e);
 
   const score = Number(rawScore.toFixed(2));
 
