@@ -93,10 +93,10 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-console.log("Serving frontend from:", frontendDist);
-
 if (process.env.NODE_ENV === "production") {
   const frontendDist = path.join(__dirname, "../../frontend/dist");
+
+  console.log("Serving frontend from:", frontendDist);
 
   app.use(express.static(frontendDist));
 
