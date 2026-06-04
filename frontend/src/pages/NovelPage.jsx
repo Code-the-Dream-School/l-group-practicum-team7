@@ -17,7 +17,7 @@ function uniqueById(items) {
   return Array.from(map.values());
 }
 
-export default function NovelPage({ onNavigate }) {
+export default function NovelPage({ onNavigate } = {}) {
   const [available, setAvailable] = useState([]);
   const [insightLines, setInsightLines] = useState([]);
   const [entries, setEntries] = useState([]);
