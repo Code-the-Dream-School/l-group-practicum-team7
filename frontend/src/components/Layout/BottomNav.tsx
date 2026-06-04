@@ -1,6 +1,6 @@
-import { Activity, CircleUserRound, History } from 'lucide-react';
+import { Activity, CircleUserRound, History, Info } from 'lucide-react';
 
-export type MobileTab = 'today' | 'history' | 'profile';
+export type MobileTab = 'today' | 'history' | 'about' | 'profile';
 
 type BottomNavProps = {
   activeTab: MobileTab;
@@ -38,6 +38,16 @@ function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       >
         <CircleUserRound aria-hidden="true" />
         Profile
+      </button>
+
+      <button
+        type="button"
+        className={activeTab === 'about' ? 'active' : ''}
+        aria-current={activeTab === 'about' ? 'page' : undefined}
+        onClick={() => onTabChange('about')}
+      >
+        <Info aria-hidden="true" />
+        Info
       </button>
     </nav>
   );
