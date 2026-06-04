@@ -28,12 +28,20 @@ const errorHandlerMiddleware = require("./middleware/error-handler");
 
 const app = express();
 
-app.set("trust proxy", 1);
+const isProduction = process.env.NODE_ENV === "production";
+const frontendDist = path.join(__dirname, "../../frontend/dist");
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+  console.log("Serving frontend from:", frontendDist);
+
+  app.use(express.static(frontendDist));
+}
 
 app.use(
   helmet({
     contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,  
+    crossOriginEmbedderPolicy: false,
   })
 );
 
@@ -87,20 +95,14 @@ app.use("/api/insights", insightsRoutes);
 app.use("/api/dialogues", dialogueRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 
-if (process.env.NODE_ENV !== "production") {
+if (!isProduction) {
   app.get("/", (req, res) => {
     res.send("Backend API is running");
   });
 }
 
-if (process.env.NODE_ENV === "production") {
-  const frontendDist = path.join(__dirname, "../../frontend/dist");
-
-  console.log("Serving frontend from:", frontendDist);
-
-  app.use(express.static(frontendDist));
-
-  app.get(/^\/(?!api).*/, (req, res) => {
+if (isProduction) {
+  app.get("*", (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
