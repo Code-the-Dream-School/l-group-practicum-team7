@@ -7,7 +7,6 @@ type InsightHighlightsProps = {
 
 function InsightHighlights({ insights }: InsightHighlightsProps) {
   const groups = [
-    { title: 'Today', messages: insights.today, Icon: Activity },
     { title: 'Trend', messages: insights.trend, Icon: TrendingUp },
     { title: 'Weekly', messages: insights.weekly, Icon: CalendarDays },
     { title: 'Additional Signals', messages: insights.advanced, Icon: Sparkles },

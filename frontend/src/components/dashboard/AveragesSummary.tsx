@@ -1,5 +1,5 @@
 import { BarChart3 } from 'lucide-react';
-import type { InsightsResponse } from '../types/wellness';
+import type { InsightsResponse } from '../../types/wellness';
 
 type AveragesSummaryProps = {
   averages: InsightsResponse['averages'];
@@ -36,7 +36,6 @@ function AveragesSummary({ averages }: AveragesSummaryProps) {
           <BarChart3 aria-hidden="true" />
           Averages
         </h2>
-        <span>Backend insights</span>
       </div>
 
       <div className="averages-grid">

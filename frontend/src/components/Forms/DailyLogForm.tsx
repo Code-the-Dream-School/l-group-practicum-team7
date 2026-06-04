@@ -172,7 +172,7 @@ function DailyLogForm({
                 className="daily-log-slider-input"
                 type="range"
                 min="1"
-                max="24"
+                max="8"
                 step="0.5"
                 value={sleep}
                 onChange={(e) => setSleep(Number(e.target.value))}

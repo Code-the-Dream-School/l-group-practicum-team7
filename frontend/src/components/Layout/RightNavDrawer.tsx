@@ -8,7 +8,6 @@ import {
   Home,
   Info,
   MessageCircle,
-  PawPrint,
   Wrench,
 } from 'lucide-react';
 
@@ -40,16 +39,11 @@ type RightNavDrawerProps = {
   onLogout?: () => void;
 };
 
-const navItems: Array<{
+const mainNavItems: Array<{
   route: DrawerRoute;
   label: string;
   icon: typeof Home;
 }> = [
-  {
-    route: 'profile',
-    label: 'Profile',
-    icon: CircleUserRound,
-  },
   {
     route: 'backend',
     label: 'Dashboard',
@@ -61,11 +55,6 @@ const navItems: Array<{
     icon: Clock3,
   },
   {
-    route: 'about',
-    label: 'About',
-    icon: Info,
-  },
-  {
     route: 'dialogues',
     label: 'Dialogues',
     icon: MessageCircle,
@@ -74,6 +63,23 @@ const navItems: Array<{
     route: 'tools',
     label: 'Tools',
     icon: Wrench,
+  },
+];
+
+const secondaryNavItems: Array<{
+  route: DrawerRoute;
+  label: string;
+  icon: typeof Home;
+}> = [
+  {
+    route: 'profile',
+    label: 'Profile',
+    icon: CircleUserRound,
+  },
+  {
+    route: 'about',
+    label: 'About',
+    icon: Info,
   },
 ];
 
@@ -112,6 +118,28 @@ function RightNavDrawer({
     return activeRoute === route;
   }
 
+  function renderNavItem(item: {
+    route: DrawerRoute;
+    label: string;
+    icon: typeof Home;
+  }) {
+    const Icon = item.icon;
+    const active = isRouteActive(item.route);
+
+    return (
+      <button
+        key={item.route}
+        type="button"
+        className={active ? 'active' : undefined}
+        onClick={() => handleNavigate(item.route)}
+        aria-current={active ? 'page' : undefined}
+      >
+        <Icon aria-hidden="true" />
+        <span>{item.label}</span>
+      </button>
+    );
+  }
+
   return (
     <>
       <aside className={`right-drawer ${isOpen ? 'open' : ''}`}>
@@ -123,27 +151,15 @@ function RightNavDrawer({
           <span>PulseMind</span>
         </div>
 
-        <nav className="right-drawer-nav" aria-label="Drawer navigation">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isRouteActive(item.route);
-
-            return (
-              <button
-                key={item.route}
-                type="button"
-                className={active ? 'active' : undefined}
-                onClick={() => handleNavigate(item.route)}
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+        <nav className="right-drawer-nav" aria-label="Main navigation">
+          {mainNavItems.map(renderNavItem)}
         </nav>
 
         <div className="right-drawer-bottom">
+          <nav className="right-drawer-secondary-nav" aria-label="Secondary navigation">
+            {secondaryNavItems.map(renderNavItem)}
+          </nav>
+
           <div className="right-drawer-user">
             <div className="right-drawer-user-avatar">{initials}</div>
 

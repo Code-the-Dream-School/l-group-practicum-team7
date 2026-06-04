@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import AuthModal from "./components/Auth/AuthModal";
-Limport About from "./pages/About";
+import About from "./pages/About";
 import ToolsPage from "./pages/ToolsPage";
 import NovelPage from "./pages/NovelPage";
 import HomePage from "./pages/Home";
@@ -10,7 +10,7 @@ import CheckoutPageSuccess from "./pages/CheckoutPageSuccess";
 
 import AppHeader from "./components/Layout/AppHeader";
 import RightNavDrawer, { type DrawerRoute } from "./components/Layout/RightNavDrawer";
-import TodayPage from "./pages/TodayPage";
+import TodayPage, { type TodayCounts, type TodayNavigateTarget } from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -34,6 +34,7 @@ type Route =
   | "tools"
   | "dialogues"
   | "novel"
+  | "insights"
   | "landing"
   | "checkout"
   | "checkout_success";
@@ -51,6 +52,111 @@ type User = {
 
 type MeResponse = Record<string, unknown>;
 
+const drawerRouteToPath: Partial<Record<DrawerRoute, string>> = {
+  backend: '/dashboard',
+  today: '/dashboard',
+  home: '/dashboard',
+  history: '/history',
+  dialogues: '/dialogues',
+  novel: '/dialogues',
+  tools: '/tools',
+  profile: '/profile',
+  about: '/about',
+  checkout: '/checkout',
+  checkout_success: '/checkout/success',
+  auth: '/auth',
+};
+
+function pathToDrawerRoute(pathname: string): DrawerRoute {
+  if (pathname.startsWith('/history')) return 'history';
+  if (pathname.startsWith('/dialogues')) return 'dialogues';
+  if (pathname.startsWith('/tools')) return 'tools';
+  if (pathname.startsWith('/profile')) return 'profile';
+  if (pathname.startsWith('/about')) return 'about';
+  if (pathname.startsWith('/checkout/success')) return 'checkout_success';
+  if (pathname.startsWith('/checkout')) return 'checkout';
+  if (pathname.startsWith('/auth')) return 'auth';
+
+  return 'backend';
+}
+
+function updateBrowserPath(route: DrawerRoute, replace = false) {
+  const nextPath = drawerRouteToPath[route] || '/dashboard';
+
+  if (window.location.pathname === nextPath) {
+    return;
+  }
+
+  if (replace) {
+    window.history.replaceState({}, '', nextPath);
+    return;
+  }
+
+  window.history.pushState({}, '', nextPath);
+}
+
+function getArrayFromResponse(data: unknown, keys: string[]) {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== "object") return [];
+
+  const record = data as Record<string, unknown>;
+
+  for (const key of keys) {
+    if (Array.isArray(record[key])) {
+      return record[key] as unknown[];
+    }
+  }
+
+  return [];
+}
+
+async function readJsonSafely(response: Response | null) {
+  if (!response || !response.ok) return null;
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function loadTodayCounts(token: string): Promise<TodayCounts> {
+  const [dialoguesResponse, toolsResponse] = await Promise.all([
+    fetch(`${API}/api/dialogues/available`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).catch(() => null),
+    fetch(`${API}/api/dialogues/tools`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).catch(() => null),
+  ]);
+
+  const dialoguesResult = await readJsonSafely(dialoguesResponse);
+  const toolsResult = await readJsonSafely(toolsResponse);
+
+  const dialogueCount = getArrayFromResponse(dialoguesResult, [
+    "dialogues",
+    "availableDialogues",
+    "available",
+    "items",
+  ]).length;
+
+  const toolCount = getArrayFromResponse(toolsResult, [
+    "tools",
+    "unlockedTools",
+    "availableTools",
+    "items",
+  ]).length;
+
+  return {
+    dialogueCount,
+    toolCount,
+  };
+}
+
 function App(): React.ReactElement {
   const [checking, setChecking] = useState<boolean>(() =>
     Boolean(localStorage.getItem("token")),
@@ -63,6 +169,10 @@ function App(): React.ReactElement {
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
+  const [todayCounts, setTodayCounts] = useState<TodayCounts>({
+    dialogueCount: 0,
+    toolCount: 0,
+  });
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
@@ -75,6 +185,18 @@ function App(): React.ReactElement {
 
   const isCheckoutRoute = route === "checkout" || route === "checkout_success";
 
+  const resetDashboardData = useCallback(() => {
+    dashboardRequestId.current += 1;
+    setEntries([]);
+    setInsights(null);
+    setTodayCounts({
+      dialogueCount: 0,
+      toolCount: 0,
+    });
+    setDashboardLoading(false);
+    setDashboardError(null);
+  }, []);
+
   const loadDashboardData = useCallback(async (token: string): Promise<void> => {
     const requestId = dashboardRequestId.current + 1;
     dashboardRequestId.current = requestId;
@@ -83,9 +205,10 @@ function App(): React.ReactElement {
     setDashboardError(null);
 
     try {
-      const [savedEntries, generatedInsights] = await Promise.all([
+      const [savedEntries, generatedInsights, loadedCounts] = await Promise.all([
         getEntries(token),
         getInsights(token),
+        loadTodayCounts(token),
       ]);
 
       if (requestId !== dashboardRequestId.current) {
@@ -94,6 +217,7 @@ function App(): React.ReactElement {
 
       setEntries(savedEntries);
       setInsights(generatedInsights);
+      setTodayCounts(loadedCounts);
     } catch (error) {
       if (requestId !== dashboardRequestId.current) {
         return;
@@ -108,14 +232,6 @@ function App(): React.ReactElement {
         setDashboardLoading(false);
       }
     }
-  }, []);
-
-  const resetDashboardData = useCallback(() => {
-    dashboardRequestId.current += 1;
-    setEntries([]);
-    setInsights(null);
-    setDashboardLoading(false);
-    setDashboardError(null);
   }, []);
 
   const syncPremiumStatus = useCallback(async (token?: string) => {
@@ -268,6 +384,25 @@ function App(): React.ReactElement {
     };
   }, [loadDashboardData, resetDashboardData, syncPremiumStatus]);
 
+  useEffect(() => {
+  if (checking) {
+    return;
+  }
+
+  const applyCurrentPath = () => {
+    const routeFromPath = pathToDrawerRoute(window.location.pathname);
+    handleDrawerNavigate(routeFromPath, false);
+  };
+
+  applyCurrentPath();
+
+  window.addEventListener('popstate', applyCurrentPath);
+
+  return () => {
+    window.removeEventListener('popstate', applyCurrentPath);
+  };
+}, [checking, user]);
+
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
 
@@ -371,60 +506,119 @@ function App(): React.ReactElement {
     return "backend";
   }
 
-  function handleDrawerNavigate(nextRoute: DrawerRoute): void {
-    if (!user && nextRoute !== "about") {
-      const protectedRoute =
-        nextRoute === "novel"
-          ? "dialogues"
-          : nextRoute === "today" || nextRoute === "history" || nextRoute === "profile"
-            ? "backend"
-            : nextRoute;
+  function goToDashboardTab(tab: MobileTab) {
+    setRoute("backend");
+    setMobileTab(tab);
+  }
 
-      setPendingRoute(protectedRoute as Route);
-      setAuthMode("login");
-      setShowAuth(true);
-      setRoute("auth");
-      return;
-    }
-
-    if (nextRoute === "backend" || nextRoute === "home" || nextRoute === "today") {
-      setRoute("backend");
-      setMobileTab("today");
-      return;
-    }
-
-    if (nextRoute === "history") {
-      setRoute("backend");
-      setMobileTab("history");
-      return;
-    }
-
-    if (nextRoute === "profile") {
-      setRoute("backend");
-      setMobileTab("profile");
-      return;
-    }
-
-    if (nextRoute === "about") {
-      setRoute("backend");
-      setMobileTab("info" as MobileTab);
-      return;
-    }
-
-    if (nextRoute === "dialogues" || nextRoute === "novel") {
+  function handleTodayNavigate(nextRoute: TodayNavigateTarget): void {
+    if (nextRoute === "dialogues") {
       setRoute("dialogues");
       return;
     }
 
     if (nextRoute === "tools") {
       setRoute("tools");
-      return;
-    }
-
-    if (nextRoute === "checkout" || nextRoute === "checkout_success") {
-      setRoute(nextRoute);
     }
   }
+
+function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
+  const token = localStorage.getItem('token');
+
+  if (!user && !token && nextRoute !== 'about') {
+    setPendingRoute(
+      nextRoute === 'history' ||
+      nextRoute === 'profile' ||
+      nextRoute === 'backend' ||
+      nextRoute === 'today' ||
+      nextRoute === 'home'
+        ? 'backend'
+        : nextRoute,
+    );
+
+    setAuthMode('login');
+    setShowAuth(true);
+    setRoute('auth');
+
+    if (shouldPush) {
+      updateBrowserPath('auth');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'backend' || nextRoute === 'today' || nextRoute === 'home') {
+    setRoute('backend');
+    setMobileTab('today');
+
+    if (shouldPush) {
+      updateBrowserPath('backend');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'history') {
+    setRoute('backend');
+    setMobileTab('history');
+
+    if (shouldPush) {
+      updateBrowserPath('history');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'profile') {
+    setRoute('backend');
+    setMobileTab('profile');
+
+    if (shouldPush) {
+      updateBrowserPath('profile');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'about') {
+    setRoute('backend');
+    setMobileTab('info' as MobileTab);
+
+    if (shouldPush) {
+      updateBrowserPath('about');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'dialogues' || nextRoute === 'novel') {
+    setRoute('dialogues');
+
+    if (shouldPush) {
+      updateBrowserPath('dialogues');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'tools') {
+    setRoute('tools');
+
+    if (shouldPush) {
+      updateBrowserPath('tools');
+    }
+
+    return;
+  }
+
+  if (nextRoute === 'checkout' || nextRoute === 'checkout_success') {
+    setRoute(nextRoute);
+
+    if (shouldPush) {
+      updateBrowserPath(nextRoute);
+    }
+  }
+}
 
   if (checking) {
     return (
@@ -482,6 +676,8 @@ function App(): React.ReactElement {
                   insights={insights}
                   loading={dashboardLoading}
                   error={dashboardError}
+                  todayCounts={todayCounts}
+                  onNavigate={handleTodayNavigate}
                 />
               )}
 
@@ -550,4 +746,5 @@ function App(): React.ReactElement {
 }
 
 export default App;
+
 

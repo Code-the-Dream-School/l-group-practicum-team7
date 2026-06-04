@@ -189,3 +189,38 @@
     left: min(86vw, 300px);
   }
 }
+
+.right-drawer-secondary-nav {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.right-drawer-secondary-nav button {
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.right-drawer-secondary-nav button.active {
+  background: #5b4ee6;
+  color: #ffffff;
+  box-shadow: 0 16px 30px rgba(91, 78, 230, 0.28);
+}
+
+.right-drawer-secondary-nav svg {
+  width: 24px;
+  height: 24px;
+}
