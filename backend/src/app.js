@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("express-async-errors");
+
 const path = require("path");
 
 const express = require("express");
@@ -17,7 +18,7 @@ const insightsRoutes = require("./routes/insightsRoutes.js");
 const sessionRoutes = require("./routes/sessionRoutes");
 const entryRoutes = require("./routes/entryRoutes.js");
 const dialogueRoutes = require("./routes/dialogueRoutes");
-const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 
 const passportInit = require("./passport/passportInit");
 const attachUserFromJwt = require("./middleware/attachUserFromJwt");
@@ -27,15 +28,22 @@ const errorHandlerMiddleware = require("./middleware/error-handler");
 
 const app = express();
 
-app.use(helmet());
+app.set("trust proxy", 1);
 
-const allowedOrigins = (process.env.CLIENT_ORIGINS ||
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
+
+const allowedOrigins = (
+  process.env.CLIENT_ORIGINS ||
   process.env.FRONTEND_ORIGIN ||
-  'http://localhost:5173,http://localhost:5174')
-  .split(',')
+  "http://localhost:5173,http://localhost:5174"
+)
+  .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-
 
 const corsOptions = {
   origin(origin, callback) {
@@ -63,18 +71,26 @@ app.use(
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
-  }),
+  })
 );
 
 passportInit();
 app.use(passport.initialize());
 
 app.use(attachUserFromJwt);
-app.use("/api/auth", sessionRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Backend API is running");
-});
+app.use("/api/auth", sessionRoutes);
+app.use("/api/hello", helloRoutes);
+app.use("/api/entries", entryRoutes);
+app.use("/api/insights", insightsRoutes);
+app.use("/api/dialogues", dialogueRoutes);
+app.use("/api/subscription", subscriptionRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  app.get("/", (req, res) => {
+    res.send("Backend API is running");
+  });
+}
 
 if (process.env.NODE_ENV === "production") {
   const frontendDist = path.join(__dirname, "../../frontend/dist");
@@ -85,12 +101,6 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
-
-app.use("/api/hello", helloRoutes);
-app.use("/api/entries", entryRoutes);
-app.use("/api/insights", insightsRoutes);
-app.use("/api/dialogues", dialogueRoutes);
-app.use('/api/subscription', subscriptionRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
