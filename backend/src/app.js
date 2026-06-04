@@ -33,6 +33,7 @@ app.set("trust proxy", 1);
 app.use(
   helmet({
     contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,  
   })
 );
 
@@ -91,6 +92,8 @@ if (process.env.NODE_ENV !== "production") {
     res.send("Backend API is running");
   });
 }
+
+console.log("Serving frontend from:", frontendDist);
 
 if (process.env.NODE_ENV === "production") {
   const frontendDist = path.join(__dirname, "../../frontend/dist");
