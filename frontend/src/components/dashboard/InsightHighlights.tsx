@@ -1,5 +1,5 @@
 import { Activity, CalendarDays, Sparkles, TrendingUp } from 'lucide-react';
-import type { InsightGroups } from '../types/wellness';
+import type { InsightGroups } from '../../types/wellness';
 
 type InsightHighlightsProps = {
   insights: InsightGroups;

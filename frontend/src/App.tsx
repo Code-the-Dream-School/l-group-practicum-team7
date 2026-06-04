@@ -1,24 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import AuthModal from "./components/Auth/AuthModal";
-import Header from "./components/Layout/Header";
-import About from "./pages/About";
-import Insights from "./components/Insights/Insights";
-import EntryForm from "./components/Forms/EntryForm";
+Limport About from "./pages/About";
 import ToolsPage from "./pages/ToolsPage";
 import NovelPage from "./pages/NovelPage";
 import HomePage from "./pages/Home";
-import CheckoutPage from './pages/CheckoutPage';
-import CheckoutPageSuccess from './pages/CheckoutPageSuccess';
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutPageSuccess from "./pages/CheckoutPageSuccess";
 
 import AppHeader from "./components/Layout/AppHeader";
-import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
+import RightNavDrawer, { type DrawerRoute } from "./components/Layout/RightNavDrawer";
 import TodayPage from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+
 import { getEntries, getInsights } from "./services/wellnessApi";
 import type { Entry, InsightsResponse } from "./types/wellness";
-import { clearToolDialogueStorage } from './utils/clearToolDialogueStorage';
+import { clearToolDialogueStorage } from "./utils/clearToolDialogueStorage";
 
 import "./App.css";
 import "./styles/App.css";
@@ -26,6 +24,7 @@ import "./styles/App.css";
 const API: string = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 type AuthMode = "login" | "register" | "signup";
+type MobileTab = "today" | "history" | "profile" | "info";
 
 type Route =
   | "backend"
@@ -33,16 +32,13 @@ type Route =
   | "search"
   | "auth"
   | "tools"
-  | "insights"
   | "dialogues"
   | "novel"
   | "landing"
-  | 'checkout'
-  | 'checkout_success';
+  | "checkout"
+  | "checkout_success";
 
 type User = {
-  email?: string;
-  name?: string;
   token?: string;
   email?: string;
   name?: string;
@@ -55,22 +51,34 @@ type User = {
 
 type MeResponse = Record<string, unknown>;
 
-function App(): React.ReactElement {  
-  const [checking, setChecking] = useState<boolean>(() => Boolean(localStorage.getItem("token")));
+function App(): React.ReactElement {
+  const [checking, setChecking] = useState<boolean>(() =>
+    Boolean(localStorage.getItem("token")),
+  );
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [route, setRoute] = useState<Route>("landing");
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
+
   const [entries, setEntries] = useState<Entry[]>([]);
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string>("");
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+
+  const authRequestId = useRef<number>(0);
   const dashboardRequestId = useRef<number>(0);
+
+  const isCheckoutRoute = route === "checkout" || route === "checkout_success";
 
   const loadDashboardData = useCallback(async (token: string): Promise<void> => {
     const requestId = dashboardRequestId.current + 1;
     dashboardRequestId.current = requestId;
+
     setDashboardLoading(true);
     setDashboardError(null);
 
@@ -91,7 +99,9 @@ function App(): React.ReactElement {
         return;
       }
 
-      const message = error instanceof Error ? error.message : "Unable to load dashboard data";
+      const message =
+        error instanceof Error ? error.message : "Unable to load dashboard data";
+
       setDashboardError(message);
     } finally {
       if (requestId === dashboardRequestId.current) {
@@ -99,228 +109,322 @@ function App(): React.ReactElement {
       }
     }
   }, []);
-  const [lastEntryText, setLastEntryText] = useState<string>("");
-  const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
-  const [lastOrderId, setLastOrderId] = useState<string>('');
-  const [isPremium, setIsPremium] = useState<boolean>(false);
-  useEffect(() => {
-        const onOpenTools = () => {
-          const token = localStorage.getItem("token");
 
-          if (!token) {
-            setPendingRoute("tools");
-            setAuthMode("login");
-            setShowAuth(true);
-            setRoute("auth");
-            return;
-          }
+  const resetDashboardData = useCallback(() => {
+    dashboardRequestId.current += 1;
+    setEntries([]);
+    setInsights(null);
+    setDashboardLoading(false);
+    setDashboardError(null);
+  }, []);
 
-          setRoute("tools");
-        };
+  const syncPremiumStatus = useCallback(async (token?: string) => {
+    const activeToken = token || localStorage.getItem("token");
 
-      const onOpenCheckout = () => {
-        const token = localStorage.getItem('token');
+    if (!activeToken) {
+      setIsPremium(false);
+      return;
+    }
 
-        if (!token) {
-          setPendingRoute('checkout');
-          setAuthMode('login');
-          setShowAuth(true);
-          setRoute('auth');
-          return;
-        }
+    try {
+      const response = await fetch(`${API}/api/subscription/me`, {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
 
-        setRoute('checkout');
-      };
-
-      const onCheckoutSuccess = async (event: Event) => {
-        const customEvent = event as CustomEvent<{ orderId?: string }>;
-
-        setLastOrderId(customEvent.detail?.orderId || '');
-        await syncPremiumStatus();
-        setRoute('checkout_success');
-      };
-
-      window.addEventListener("openTools", onOpenTools);
-      window.addEventListener('openCheckout', onOpenCheckout);
-      window.addEventListener('checkoutSuccess', onCheckoutSuccess);
-
-      return () => {
-        window.removeEventListener('openTools', onOpenTools);
-        window.removeEventListener('openCheckout', onOpenCheckout);
-        window.removeEventListener('checkoutSuccess', onCheckoutSuccess);
-      };
-    }, []);
-
-    useEffect(() => {
-      const controller = new AbortController();
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setUser(null);
-          setChecking(false);
-          setRoute("landing");
-          setAuthMode("login");
-          setShowAuth(false);
-
-        return () => {
-          controller.abort();
-        };
-      }
-
-        fetch(`${API}/api/auth/me`, {
-        signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("not authed");
-            }
-
-          return response.json() as Promise<MeResponse>;
-        })
-        .then((userData) => {
-          setUser({ ...userData, token });
-          setRoute('backend');
-          syncPremiumStatus(token);
-        })
-        .catch((error) => {
-          if (controller.signal.aborted) {
-            return;
-          }
-
-          localStorage.removeItem('token');
-          localStorage.removeItem('premiumStatus');
-          setIsPremium(false);
-          setUser(null);
-          setRoute('auth');
-          setAuthMode('login');
-          setShowAuth(true);
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) {
-            setChecking(false);
-          }
-        });
-}, []);
-
-  async function syncPremiumStatus(token?: string) {
-      const activeToken = token || localStorage.getItem('token');
-
-      if (!activeToken) {
+      if (!response.ok) {
         setIsPremium(false);
         return;
       }
 
-      try {
-        const response = await fetch(`${API}/api/subscription/me`, {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
-        });
+      const data = await response.json();
 
+      setIsPremium(data?.premium === true);
+    } catch {
+      setIsPremium(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onOpenTools = () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setPendingRoute("tools");
+        setAuthMode("login");
+        setShowAuth(true);
+        setRoute("auth");
+        return;
+      }
+
+      setRoute("tools");
+    };
+
+    const onOpenCheckout = () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setPendingRoute("checkout");
+        setAuthMode("login");
+        setShowAuth(true);
+        setRoute("auth");
+        return;
+      }
+
+      setRoute("checkout");
+    };
+
+    const onCheckoutSuccess = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ orderId?: string }>;
+
+      setLastOrderId(customEvent.detail?.orderId || "");
+      await syncPremiumStatus();
+      setRoute("checkout_success");
+    };
+
+    window.addEventListener("openTools", onOpenTools);
+    window.addEventListener("openCheckout", onOpenCheckout);
+    window.addEventListener("checkoutSuccess", onCheckoutSuccess);
+
+    return () => {
+      window.removeEventListener("openTools", onOpenTools);
+      window.removeEventListener("openCheckout", onOpenCheckout);
+      window.removeEventListener("checkoutSuccess", onCheckoutSuccess);
+    };
+  }, [syncPremiumStatus]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const token = localStorage.getItem("token");
+    const requestId = authRequestId.current + 1;
+
+    authRequestId.current = requestId;
+
+    if (!token) {
+      setUser(null);
+      setIsPremium(false);
+      resetDashboardData();
+      setChecking(false);
+      setRoute("landing");
+      setAuthMode("login");
+      setShowAuth(false);
+
+      return () => {
+        controller.abort();
+      };
+    }
+
+    fetch(`${API}/api/auth/me`, {
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
         if (!response.ok) {
-          setIsPremium(false);
+          throw new Error("not authed");
+        }
+
+        return response.json() as Promise<MeResponse>;
+      })
+      .then((userData) => {
+        if (requestId !== authRequestId.current) {
           return;
         }
 
-        const data = await response.json();
+        setUser({ ...userData, token });
+        setRoute("backend");
+        setMobileTab("today");
 
-        setIsPremium(data?.premium === true);
-      } catch {
+        void loadDashboardData(token);
+        void syncPremiumStatus(token);
+      })
+      .catch(() => {
+        if (controller.signal.aborted || requestId !== authRequestId.current) {
+          return;
+        }
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("premiumStatus");
+        clearToolDialogueStorage();
+
+        setUser(null);
         setIsPremium(false);
-      }
-    }
+        setPendingRoute(null);
+        resetDashboardData();
+        setRoute("landing");
+        setAuthMode("login");
+        setShowAuth(false);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted && requestId === authRequestId.current) {
+          setChecking(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [loadDashboardData, resetDashboardData, syncPremiumStatus]);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
 
-  if (userData?.token) {
-    localStorage.setItem('token', userData.token);
+    if (userData?.token) {
+      localStorage.setItem("token", userData.token);
       void loadDashboardData(userData.token);
-    syncPremiumStatus(userData.token);
-  }
+      void syncPremiumStatus(userData.token);
+    }
 
-  window.dispatchEvent(new Event('authChanged'));
-  setShowAuth(false);
+    window.dispatchEvent(new Event("authChanged"));
+    setShowAuth(false);
 
-  if (pendingRoute) {
-    setRoute(pendingRoute);
-    setPendingRoute(null);
-  } else {
-    setRoute('backend');
-  }
-};
-
-const handleLoginOpen = (mode?: AuthMode): void => {
-  setAuthMode(mode || 'login');
-  setShowAuth(true);
-  setRoute('auth');
-};
+    if (pendingRoute) {
+      setRoute(pendingRoute);
+      setPendingRoute(null);
+    } else {
+      setRoute("backend");
+      setMobileTab("today");
+    }
+  };
 
   const handleLogout = (): void => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('premiumStatus');
-    setIsPremium(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("premiumStatus");
     clearToolDialogueStorage();
+
+    authRequestId.current += 1;
 
     setUser(null);
     setIsPremium(false);
     setPendingRoute(null);
+    setLastOrderId("");
+    setMobileTab("today");
+    resetDashboardData();
     setRoute("landing");
     setAuthMode("login");
     setShowAuth(false);
 
-    window.dispatchEvent(new Event('authChanged'));
+    window.dispatchEvent(new Event("authChanged"));
   };
 
-  const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== "about" && nextRoute !== "landing") {
-      setPendingRoute(nextRoute);
+  const handleEntryCreated = (): void => {
+    const token = user?.token || localStorage.getItem("token");
+
+    if (token) {
+      void loadDashboardData(token);
+    }
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent("insights.entry", {
+          detail: { text: "" },
+        }),
+      );
+    } catch {}
+  };
+
+  const renderProtectedRoute = (content: React.ReactElement) => {
+    if (!user) {
+      return <p>Please log in to continue.</p>;
+    }
+
+    return content;
+  };
+
+  const activeMobileTab = mobileTab as string;
+
+  function getDrawerActiveRoute(): DrawerRoute {
+    if (route === "checkout" || route === "checkout_success") {
+      return route;
+    }
+
+    if (route === "tools") {
+      return "tools";
+    }
+
+    if (route === "dialogues" || route === "novel") {
+      return "dialogues";
+    }
+
+    if (route === "about") {
+      return "about";
+    }
+
+    if (route === "auth") {
+      return "auth";
+    }
+
+    if (activeMobileTab === "history") {
+      return "history";
+    }
+
+    if (activeMobileTab === "profile") {
+      return "profile";
+    }
+
+    if (activeMobileTab === "info" || activeMobileTab === "about") {
+      return "about";
+    }
+
+    return "backend";
+  }
+
+  function handleDrawerNavigate(nextRoute: DrawerRoute): void {
+    if (!user && nextRoute !== "about") {
+      const protectedRoute =
+        nextRoute === "novel"
+          ? "dialogues"
+          : nextRoute === "today" || nextRoute === "history" || nextRoute === "profile"
+            ? "backend"
+            : nextRoute;
+
+      setPendingRoute(protectedRoute as Route);
       setAuthMode("login");
       setShowAuth(true);
       setRoute("auth");
       return;
     }
 
-    if (nextRoute === "insights") {
-      try {
-        window.dispatchEvent(
-          new CustomEvent("insights.entry", {
-            detail: { text: lastEntryText },
-          }),
-        );
-      } catch (e) {}
-
+    if (nextRoute === "backend" || nextRoute === "home" || nextRoute === "today") {
       setRoute("backend");
+      setMobileTab("today");
       return;
     }
 
-    if (nextRoute === "novel") {
+    if (nextRoute === "history") {
+      setRoute("backend");
+      setMobileTab("history");
+      return;
+    }
+
+    if (nextRoute === "profile") {
+      setRoute("backend");
+      setMobileTab("profile");
+      return;
+    }
+
+    if (nextRoute === "about") {
+      setRoute("backend");
+      setMobileTab("info" as MobileTab);
+      return;
+    }
+
+    if (nextRoute === "dialogues" || nextRoute === "novel") {
       setRoute("dialogues");
       return;
     }
 
-    setRoute(nextRoute);
-  };
-
-  const handleLogout = (): void => {
-    localStorage.removeItem("token");
-    dashboardRequestId.current += 1;
-    setUser(null);
-    setEntries([]);
-    setInsights(null);
-    setDashboardLoading(false);
-    setDashboardError(null);
-    setShowAuth(true);
-  };
-
-  const handleEntryCreated = (): void => {
-    if (user?.token) {
-      void loadDashboardData(user.token);
+    if (nextRoute === "tools") {
+      setRoute("tools");
+      return;
     }
-  };
+
+    if (nextRoute === "checkout" || nextRoute === "checkout_success") {
+      setRoute(nextRoute);
+    }
+  }
 
   if (checking) {
     return (
@@ -332,64 +436,7 @@ const handleLoginOpen = (mode?: AuthMode): void => {
 
   return (
     <div className="app">
-      {route !== "landing" && (
-        <section className="app-shell">
-          <AppHeader onEntryCreated={handleEntryCreated} />
-
-        {route === 'checkout' && user && (
-          <CheckoutPage
-            onSuccess={async (orderId) => {
-              setLastOrderId(orderId);
-              await syncPremiumStatus();
-              setRoute('checkout_success');
-            }}
-            onCancel={() => {
-              setRoute('backend');
-              setMobileTab('profile');
-            }}
-          />
-        )}
-
-        {route === 'checkout_success' && (
-          <CheckoutPageSuccess
-            orderId={lastOrderId}
-            onGoProfile={() => {
-              setMobileTab('profile');
-              setRoute('backend');
-            }}
-          />
-        )}
-
-        {route !== 'checkout' && route !== 'checkout_success' && (
-          <>
-              {mobileTab === "today" && (
-          <TodayPage
-            entries={entries}
-            insights={insights}
-            loading={dashboardLoading}
-            error={dashboardError}
-          />
-        )}
-              {mobileTab === "history" && (
-          <HistoryPage entries={entries} loading={dashboardLoading} error={dashboardError} />
-        )}
-              {mobileTab === "profile" && (
-                <ProfilePage
-                user={user ?? undefined}
-                onLogout={handleLogout}
-                isPremium={isPremium}
-                onOpenCheckout={() => setRoute('checkout')}
-              />
-              )}
-        {mobileTab === "about" && <About />}
-
-              <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
-          </>
-        )}
-        </section>
-      )}
-
-      {route === "landing" ? (
+      {route === "landing" && (
         <HomePage
           onStartHere={() => {
             setAuthMode("register");
@@ -397,70 +444,91 @@ const handleLoginOpen = (mode?: AuthMode): void => {
             setRoute("auth");
           }}
         />
-      ) : (
-        <section className="backend-front-section">
-          <h2 className="backend-front-title">&lt;backend front&gt;</h2>
+      )}
 
-          <Header
-            user={user ?? undefined}
-            onLogin={handleLoginOpen}
-            onLogout={handleLogout}
-            onNavigate={handleNavigate}
-          />
+      {route !== "landing" && (
+        <section className="app-shell">
+          <AppHeader onEntryCreated={handleEntryCreated} />
 
-          <main className="app-main">
-            {route === "backend" &&
-              (user ? (
-                <>
-                  <h1>Dashboard</h1>
+          {route === "checkout" && user && (
+            <CheckoutPage
+              onSuccess={async (orderId) => {
+                setLastOrderId(orderId);
+                await syncPremiumStatus();
+                setRoute("checkout_success");
+              }}
+              onCancel={() => {
+                setRoute("backend");
+                setMobileTab("profile");
+              }}
+            />
+          )}
 
-                  <EntryForm
-                    onEntryCreated={(text?: string) => {
-                      setInsightsRefreshKey((prev) => prev + 1);
+          {route === "checkout_success" && (
+            <CheckoutPageSuccess
+              orderId={lastOrderId}
+              onGoProfile={() => {
+                setMobileTab("profile");
+                setRoute("backend");
+              }}
+            />
+          )}
 
-                      if (typeof text === "string") {
-                        setLastEntryText(text);
-                      }
+          {!isCheckoutRoute && route === "backend" && (
+            <>
+              {activeMobileTab === "today" && (
+                <TodayPage
+                  entries={entries}
+                  insights={insights}
+                  loading={dashboardLoading}
+                  error={dashboardError}
+                />
+              )}
 
-                      try {
-                        window.dispatchEvent(
-                          new CustomEvent("insights.entry", {
-                            detail: { text: text || "" },
-                          }),
-                        );
-                      } catch (e) {}
-                    }}
-                  />
+              {activeMobileTab === "history" && <HistoryPage />}
 
-                  <hr style={{ margin: "2rem 0" }} />
+              {activeMobileTab === "profile" && (
+                <ProfilePage
+                  user={user ?? undefined}
+                  onLogout={handleLogout}
+                  isPremium={isPremium}
+                  onOpenCheckout={() => setRoute("checkout")}
+                />
+              )}
 
-                  <Insights />
-                </>
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
-            {route === "dialogues" &&
-              (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
+              {(activeMobileTab === "info" || activeMobileTab === "about") && (
+                <About />
+              )}
+            </>
+          )}
 
-              {route === "tools" &&
-                (user ? (
-                  <ToolsPage />
-                ) : (
-                  <p>Please log in to continue.</p>
-                ))}
+          {!isCheckoutRoute &&
+            route === "dialogues" &&
+            renderProtectedRoute(<NovelPage />)}
 
-            {route === "about" && <About />}
+          {!isCheckoutRoute &&
+            route === "tools" &&
+            renderProtectedRoute(<ToolsPage />)}
 
-            {route === "search" &&
-              (user ? (
-                <p>Search page placeholder</p>
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
+          {!isCheckoutRoute && route === "about" && <About />}
 
-            {route === "auth" && !user && <p>Please log in to continue.</p>}
-          </main>
+          {!isCheckoutRoute && route === "search" && (
+            user ? <p>Search page placeholder</p> : <p>Please log in to continue.</p>
+          )}
+
+          {!isCheckoutRoute && route === "auth" && !user && (
+            <p>Please log in to continue.</p>
+          )}
         </section>
+      )}
+
+      {user && route !== "landing" && (
+        <RightNavDrawer
+          user={user}
+          activeRoute={getDrawerActiveRoute()}
+          onNavigate={handleDrawerNavigate}
+          onLogout={handleLogout}
+        />
       )}
 
       {showAuth && (
@@ -482,3 +550,4 @@ const handleLoginOpen = (mode?: AuthMode): void => {
 }
 
 export default App;
+

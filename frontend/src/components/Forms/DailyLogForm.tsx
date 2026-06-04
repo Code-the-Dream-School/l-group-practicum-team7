@@ -1,58 +1,126 @@
 import { useState } from "react";
 import { AlertTriangle, Moon, Zap, Briefcase, X } from "lucide-react";
 
-import "../DailyLog.css";
+import "./DailyLog.css";
+
+const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 interface DailyLogData {
   stress: number;
-
   sleepHours: number;
   energy: number;
   workload: number;
 }
 
 interface DailyLogFormProps {
-  onSave: (data: DailyLogData) => Promise<void>;
-  onClose: () => void;
+  onSave?: (data: DailyLogData) => Promise<void>;
+  onClose?: () => void;
+  onEntryCreated?: (entry?: unknown) => void;
+  closeOnSave?: boolean;
 }
 
-function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
+function DailyLogForm({
+  onSave,
+  onClose,
+  onEntryCreated,
+  closeOnSave,
+}: DailyLogFormProps) {
   const [stress, setStress] = useState(3);
-
   const [sleep, setSleep] = useState(7);
   const [energy, setEnergy] = useState(3);
   const [work, setWork] = useState(3);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const shouldCloseAfterSave = closeOnSave ?? Boolean(onClose);
+
+  async function saveToBackend(data: DailyLogData) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("You need to log in first.");
+    }
+
+    const response = await fetch(`${API}/api/entries`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.error || result.msg || result.message || "Failed to create entry",
+      );
+    }
+
+    return result;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      await onSave({
-        stress,
-        sleepHours: sleep,
-        energy,
-        workload: work,
-      });
+    const payload: DailyLogData = {
+      stress,
+      sleepHours: sleep,
+      energy,
+      workload: work,
+    };
 
-      onClose();
+    setPending(true);
+    setMessage("");
+    setErrorMessage("");
+
+    try {
+      const result = onSave ? await onSave(payload) : await saveToBackend(payload);
+
+      setMessage("Daily log saved.");
+
+      if (onEntryCreated) {
+        onEntryCreated(result);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("insights.entry", {
+          detail: { entry: result, text: "Daily log saved." },
+        }),
+      );
+
+      if (shouldCloseAfterSave && onClose) {
+        onClose();
+      }
     } catch (error) {
       console.error("Failed to save daily log:", error);
-      setErrorMessage("Failed to save daily log. Please try again.");
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to save daily log. Please try again.",
+      );
+    } finally {
+      setPending(false);
     }
   };
 
   return (
     <div className="daily-log-wrapper">
-      <div className="daily-log-overlay">
+      <div className={onClose ? "daily-log-overlay" : "daily-log-inline"}>
         <div className="daily-log-card">
-          <button
-            type="button"
-            onClick={onClose}
-            className="daily-log-close-btn"
-          >
-            <X size={18} />
-          </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="daily-log-close-btn"
+              aria-label="Close daily log"
+            >
+              <X size={18} />
+            </button>
+          )}
 
           <h1 className="daily-log-title">Daily Log</h1>
 
@@ -61,6 +129,8 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
           {errorMessage && (
             <div className="daily-log-error">{errorMessage}</div>
           )}
+
+          {message && <div className="daily-log-success">{message}</div>}
 
           <form onSubmit={handleSubmit} className="daily-log-scroll-area">
             <div className="daily-log-field">
@@ -103,6 +173,7 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
                 type="range"
                 min="1"
                 max="24"
+                step="0.5"
                 value={sleep}
                 onChange={(e) => setSleep(Number(e.target.value))}
               />
@@ -163,8 +234,12 @@ function DailyLogForm({ onSave, onClose }: DailyLogFormProps) {
               </div>
             </div>
 
-            <button type="submit" className="daily-log-save-button">
-              SAVE DAILY LOG
+            <button
+              type="submit"
+              className="daily-log-save-button"
+              disabled={pending}
+            >
+              {pending ? "SAVING..." : "SAVE DAILY LOG"}
             </button>
           </form>
         </div>

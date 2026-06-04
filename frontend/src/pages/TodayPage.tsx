@@ -1,11 +1,12 @@
-import AveragesSummary from '../components/AveragesSummary';
-import InsightHighlights from '../components/InsightHighlights';
-import MetricCards from '../components/MetricCards';
-import RecommendedActions from '../components/RecommendedActions';
-import RiskSummaryCard from '../components/RiskSummaryCard';
-import WeeklyTrendsChart from '../components/WeeklyTrendsChart';
+import AveragesSummary from '../components/dashboard/AveragesSummary';
+import InsightHighlights from '../components/dashboard/InsightHighlights';
+import MetricCards from '../components/dashboard/MetricCards';
+import RecommendedActions from '../components/dashboard/RecommendedActions';
+import RiskSummaryCard from '../components/dashboard/RiskSummaryCard';
+import WeeklyTrendsChart from '../components/dashboard/WeeklyTrendsChart';
 import type { Entry, InsightsResponse } from '../types/wellness';
 import { getRecommendations } from '../utils/wellness';
+import './TodayPage.css';
 
 type TodayPageProps = {
   entries: Entry[];
@@ -70,3 +71,5 @@ function TodayPage({ entries, insights, loading, error }: TodayPageProps) {
 }
 
 export default TodayPage;
+
+

@@ -1,0 +1,73 @@
+.dashboard-blended {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 34px 20px 72px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 28px;
+}
+
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.dashboard-status {
+  margin: 42px auto;
+  width: min(100%, 980px);
+  padding: 44px;
+  border-radius: 32px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.dashboard-status h1 {
+  margin: 0;
+  color: #1f2937;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.dashboard-status p {
+  margin: 18px 0 0;
+  color: #64748b;
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 650;
+}
+
+.dashboard-error {
+  background: #fff1f2;
+  border-color: rgba(225, 91, 109, 0.2);
+}
+
+/* Light unification for the older dashboard cards. These selectors are broad
+   enough to visually align the page without changing the backend insight blocks'
+   data or component structure. */
+.dashboard-blended section,
+.dashboard-blended article {
+  box-sizing: border-box;
+}
+
+@media (min-width: 980px) {
+  .dashboard-top-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-blended {
+    padding: 22px 14px 54px;
+    gap: 22px;
+  }
+
+  .dashboard-status {
+    padding: 30px 24px;
+    border-radius: 26px;
+  }
+}
