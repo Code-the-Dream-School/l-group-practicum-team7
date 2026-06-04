@@ -14,6 +14,7 @@ exports.mochaHooks = {
   },
 
   async afterAll() {
+    this.timeout(20000);
     await mongoose.disconnect();
 
     if (mongoServer) {

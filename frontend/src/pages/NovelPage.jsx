@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import NovelTextViewer from '../components/novel/NovelTextViewer';
-import dialogueFlows from '../assets/novel/text/dialogueFlows';
-import '../components/novel/NovelTextViewer.css';
+import React, { useEffect, useState } from "react";
+import NovelTextViewer from "../components/novel/NovelTextViewer";
+import dialogueFlows from "../assets/novel/text/dialogueFlows";
+import "../components/novel/NovelTextViewer.css";
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 function uniqueById(items) {
   const map = new Map();
 
   items.forEach((item) => {
-    if (item && item.id && !map.has(item.id)) {
+    if (item?.id && !map.has(item.id)) {
       map.set(item.id, item);
     }
   });
@@ -17,181 +17,141 @@ function uniqueById(items) {
   return Array.from(map.values());
 }
 
-export default function NovelPage() {
-  const [flowId, setFlowId] = useState(null);
+export default function NovelPage({ onNavigate }) {
   const [available, setAvailable] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [insightLines, setInsightLines] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  async function loadAvailableDialogues() {
+  async function loadMascotContext() {
     setLoading(true);
-    setError('');
+    setError("");
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     if (!token) {
       setAvailable([]);
-      setError('Please log in to get recommended dialogues.');
+      setInsightLines([]);
+      setEntries([]);
+      setError("Please log in to start a dialogue.");
       setLoading(false);
       return;
     }
 
     try {
-      const resp = await fetch(`${API}/api/dialogues/available`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const [dialoguesResp, insightsResp, entriesResp] = await Promise.all([
+        fetch(`${API}/api/dialogues/available`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API}/api/insights`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API}/api/entries`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      if (resp.status === 401) {
+      if (dialoguesResp.status === 401) {
         setAvailable([]);
-        setError('Authentication failed. Please log in again.');
-        setLoading(false);
+        setInsightLines([]);
+        setEntries([]);
+        setError("Authentication failed. Please log in again.");
         return;
       }
 
-      if (!resp.ok) {
-        throw new Error(`Failed to load dialogues: ${resp.status}`);
+      if (!dialoguesResp.ok) {
+        throw new Error(`Failed to load dialogues: ${dialoguesResp.status}`);
       }
 
-      const data = await resp.json();
-
-      const backendDialogues = Array.isArray(data.dialogues)
-        ? data.dialogues
+      const dialoguesData = await dialoguesResp.json();
+      const backendDialogues = Array.isArray(dialoguesData.dialogues)
+        ? dialoguesData.dialogues
         : [];
 
-      const validDialogues = backendDialogues.filter((dialogue) => {
-        return dialogue.id && dialogueFlows[dialogue.id];
-      });
+      const validDialogues = backendDialogues.filter(
+        (dialogue) => dialogue.id && dialogueFlows[dialogue.id]
+      );
 
       setAvailable(uniqueById(validDialogues));
+
+      if (insightsResp.ok) {
+        const insightsData = await insightsResp.json();
+        const advanced = insightsData.insights?.advanced || [];
+        const trend = insightsData.insights?.trend || [];
+        const today = insightsData.insights?.today || [];
+        const weekly = insightsData.insights?.weekly || [];
+
+        setInsightLines(
+          [...advanced, ...trend, ...today, ...weekly].filter(Boolean)
+        );
+      } else {
+        setInsightLines([]);
+      }
+
+      if (entriesResp.ok) {
+        const entriesData = await entriesResp.json();
+        const nextEntries = Array.isArray(entriesData)
+          ? entriesData
+          : entriesData.entries || [];
+
+        setEntries(Array.isArray(nextEntries) ? nextEntries : []);
+      } else {
+        setEntries([]);
+      }
     } catch (e) {
       setAvailable([]);
-      setError('Could not load recommended dialogues from backend.');
+      setInsightLines([]);
+      setEntries([]);
+      setError("Could not load dialogue context.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadInsightsForMascot() {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setInsightLines([]);
-      return;
-    }
-
-    try {
-      const resp = await fetch(`${API}/api/insights`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!resp.ok) {
-        setInsightLines([]);
-        return;
-      }
-
-      const data = await resp.json();
-
-      const advanced = data.insights?.advanced || [];
-      const trend = data.insights?.trend || [];
-      const today = data.insights?.today || [];
-      const weekly = data.insights?.weekly || [];
-
-      const lines = [
-        ...advanced,
-        ...trend,
-        ...today,
-        ...weekly,
-      ];
-
-      setInsightLines(lines.filter(Boolean));
-    } catch (e) {
-      setInsightLines([]);
-    }
-  }
-
   useEffect(() => {
-    loadAvailableDialogues();
-    loadInsightsForMascot();
+    loadMascotContext();
   }, []);
 
-  if (flowId) {
+  if (loading) {
     return (
       <div className="novel-page">
-        <NovelTextViewer
-          flowId={flowId}
-          insightLines={insightLines}
-          onBack={() => setFlowId(null)}
-          onDialogueFinished={() => {
-            setFlowId(null);
-            loadAvailableDialogues();
-            loadInsightsForMascot();
-          }}
-        />
+        <div className="dialogue-status">Loading dialogue...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="novel-page">
+        <div className="dialogue-error">
+          <p>{error}</p>
+
+          <button className="btn-primary" onClick={loadMascotContext}>
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="novel-page">
-      <div className="dialogue-select-card">
-        <p className="dialogue-kicker">Recommended dialogues</p>
-
-        <h2>What should we work on?</h2>
-
-        <p className="dialogue-muted">
-          Based on your recent entries, PulseMind suggests the most relevant
-          conversation paths.
-        </p>
-
-        {insightLines.length > 0 && (
-          <div className="mascot-insight-card">
-            <strong>Mascot insight</strong>
-            <span>{insightLines[0]}</span>
-          </div>
-        )}
-
-        {loading && <div className="dialogue-status">Loading...</div>}
-
-        {!loading && error && (
-          <div className="dialogue-error">
-            <p>{error}</p>
-
-            <button className="btn-primary" onClick={loadAvailableDialogues}>
-              Try again
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && available.length === 0 && (
-          <div className="dialogue-status">
-            No recommended dialogues yet. Add a daily log first.
-          </div>
-        )}
-
-        {!loading && !error && available.length > 0 && (
-          <div className="dialogue-options">
-            {available.map((flow) => (
-              <button
-                type="button"
-                key={flow.id}
-                className="dialogue-option-card"
-                onClick={() => setFlowId(flow.id)}
-              >
-                <span className="dialogue-option-title">{flow.title}</span>
-
-                {flow.reason && (
-                  <span className="dialogue-option-reason">{flow.reason}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <NovelTextViewer
+        entries={entries}
+        insightLines={insightLines}
+        dashboardContext={{
+          dialogueCount: available.length,
+          hasHighBurnout: insightLines.some((line) =>
+            String(line).toLowerCase().includes("burnout")
+          ),
+        }}
+        availableDialogues={available}
+        autoStart
+        onNavigate={onNavigate}
+        onBack={loadMascotContext}
+        onDialogueFinished={loadMascotContext}
+      />
     </div>
   );
 }

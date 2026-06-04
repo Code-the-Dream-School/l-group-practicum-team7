@@ -123,7 +123,7 @@ function getCurrentUserScope() {
   const token = localStorage.getItem('token');
 
   if (!token) {
-    return 'anonymous';
+    return 'guest';
   }
 
   const payload = decodeJwtPayload(token);
@@ -131,13 +131,41 @@ function getCurrentUserScope() {
     payload?.userId ||
     payload?.id ||
     payload?._id ||
+    payload?.user?.userId ||
+    payload?.user?.id ||
+    payload?.user?._id ||
+    payload?.user?.email ||
+    payload?.user?.username ||
     payload?.sub ||
     payload?.email ||
     payload?.username;
 
   if (userKey) {
-    return sanitizeStoragePart(userKey);
+    return String(userKey);
   }
+
+  try {
+    const storedUser = JSON.parse(
+      localStorage.getItem('user') ||
+        localStorage.getItem('currentUser') ||
+        localStorage.getItem('authUser') ||
+        localStorage.getItem('sessionUser') ||
+        localStorage.getItem('profile') ||
+        localStorage.getItem('pulsemindUser') ||
+        'null'
+    );
+
+    const storedUserKey =
+      storedUser?.userId ||
+      storedUser?.id ||
+      storedUser?._id ||
+      storedUser?.email ||
+      storedUser?.username;
+
+    if (storedUserKey) {
+      return String(storedUserKey);
+    }
+  } catch (e) {}
 
   return sanitizeStoragePart(token.slice(-24));
 }
@@ -146,12 +174,20 @@ function getScopedStorageKey(name) {
   return `${STORAGE_PREFIX}:${getCurrentUserScope()}:${name}`;
 }
 
+function getLegacyScopedStorageKey(name) {
+  return `${STORAGE_PREFIX}:${sanitizeStoragePart(getCurrentUserScope())}:${name}`;
+}
+
 function getUnlockedKey() {
+  return `unlockedTools:${getCurrentUserScope()}`;
+}
+
+function getLegacyUnlockedKey() {
   return getScopedStorageKey('unlockedTools');
 }
 
 function getDialogueStateKey() {
-  return getScopedStorageKey('dialogueState_v1');
+  return `dialogueState_v2:${getCurrentUserScope()}`;
 }
 
 function getSeenNodesKey() {
@@ -159,7 +195,55 @@ function getSeenNodesKey() {
 }
 
 function getHistoryKey(toolId) {
-  return getScopedStorageKey(`tool:${toolId}:entries`);
+  return `toolHistory:${getCurrentUserScope()}:${toolId}`;
+}
+
+function getLegacyHistoryKeys(toolId) {
+  return Array.from(
+    new Set([
+      getScopedStorageKey(`tool:${toolId}:entries`),
+      getLegacyScopedStorageKey(`tool:${toolId}:entries`),
+      `tool:${toolId}:entries`,
+    ])
+  );
+}
+
+function getAggregateToolHistoryKey() {
+  return `toolHistory:${getCurrentUserScope()}`;
+}
+
+function readJsonArray(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function readToolHistoryMap() {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(getAggregateToolHistoryKey()) || '{}'
+    );
+
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? value
+      : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeToolHistoryMap(toolId, entries) {
+  const current = readToolHistoryMap();
+  localStorage.setItem(
+    getAggregateToolHistoryKey(),
+    JSON.stringify({
+      ...current,
+      [toolId]: entries,
+    })
+  );
 }
 
 function clearLegacyToolStorage() {
@@ -174,17 +258,23 @@ function clearLegacyToolStorage() {
 
 function clearCurrentUserToolStorage() {
   localStorage.removeItem(getUnlockedKey());
+  localStorage.removeItem(getLegacyUnlockedKey());
+  localStorage.removeItem(getLegacyScopedStorageKey('unlockedTools'));
   localStorage.removeItem(getDialogueStateKey());
+  localStorage.removeItem(`dialogueState_v1:${getCurrentUserScope()}`);
   localStorage.removeItem(getSeenNodesKey());
+  localStorage.removeItem(getAggregateToolHistoryKey());
 
   const scopePrefix = `${STORAGE_PREFIX}:${getCurrentUserScope()}:`;
+  const legacyScopePrefix = `${STORAGE_PREFIX}:${sanitizeStoragePart(getCurrentUserScope())}:`;
 
   Object.keys(localStorage)
     .filter(
       (key) =>
-        key.startsWith(scopePrefix) &&
-        key.includes(':tool:') &&
-        key.endsWith(':entries')
+        ((key.startsWith(scopePrefix) || key.startsWith(legacyScopePrefix)) &&
+          key.includes(':tool:') &&
+          key.endsWith(':entries')) ||
+        key.startsWith(`toolHistory:${getCurrentUserScope()}:`)
     )
     .forEach((key) => localStorage.removeItem(key));
 }
@@ -224,8 +314,19 @@ export default function ToolsPage() {
       let localKeys = [];
 
       try {
-        const raw = JSON.parse(localStorage.getItem(getUnlockedKey()) || '[]');
-        localKeys = extractUnlockedToolIds(raw);
+        const rawKeys = [
+          getUnlockedKey(),
+          getLegacyUnlockedKey(),
+          getLegacyScopedStorageKey('unlockedTools'),
+        ];
+
+        localKeys = Array.from(
+          new Set(
+            rawKeys.flatMap((key) =>
+              extractUnlockedToolIds(readJsonArray(key))
+            )
+          )
+        );
 
         if (mounted) {
           setUnlocked(localKeys);
@@ -254,6 +355,7 @@ export default function ToolsPage() {
         const mergedKeys = Array.from(new Set([...localKeys, ...backendKeys]));
 
         localStorage.setItem(getUnlockedKey(), JSON.stringify(mergedKeys));
+        localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(mergedKeys));
 
         if (mounted) {
           setUnlocked(mergedKeys);
@@ -276,12 +378,14 @@ export default function ToolsPage() {
           const ids = extractUnlockedToolIds(e.detail.unlockedTools);
 
           localStorage.setItem(getUnlockedKey(), JSON.stringify(ids));
+          localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(ids));
           setUnlocked(ids);
           return;
         }
 
-        const raw = JSON.parse(localStorage.getItem(getUnlockedKey()) || '[]');
-        setUnlocked(extractUnlockedToolIds(raw));
+        const raw = readJsonArray(getUnlockedKey());
+        const legacy = readJsonArray(getLegacyUnlockedKey());
+        setUnlocked(extractUnlockedToolIds([...raw, ...legacy]));
       } catch (err) {
         setUnlocked([]);
       }
@@ -318,11 +422,25 @@ export default function ToolsPage() {
   }, [timerRunning, timerSec]);
 
   function loadHistory(toolId) {
-    try {
-      return JSON.parse(localStorage.getItem(getHistoryKey(toolId)) || '[]');
-    } catch (e) {
-      return [];
-    }
+    const canonical = readJsonArray(getHistoryKey(toolId));
+    const aggregate = readToolHistoryMap()[toolId] || [];
+    const legacy = getLegacyHistoryKeys(toolId).flatMap((key) =>
+      readJsonArray(key)
+    );
+
+    const merged = [...canonical, ...aggregate, ...legacy];
+    const seen = new Set();
+
+    return merged.filter((entry) => {
+      const signature = JSON.stringify(entry);
+
+      if (seen.has(signature)) {
+        return false;
+      }
+
+      seen.add(signature);
+      return true;
+    });
   }
 
   function saveEntry(toolId, payload) {
@@ -334,6 +452,7 @@ export default function ToolsPage() {
     ];
 
     localStorage.setItem(key, JSON.stringify(nextEntries));
+    writeToolHistoryMap(toolId, nextEntries);
     setHistoryEntries(nextEntries);
   }
 
@@ -403,6 +522,7 @@ export default function ToolsPage() {
     }));
 
     localStorage.setItem(getUnlockedKey(), JSON.stringify(allTools));
+    localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(allTools));
     setUnlocked(allTools.map((tool) => tool.key));
 
     window.dispatchEvent(

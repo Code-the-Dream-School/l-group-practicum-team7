@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { StatusCodes } = require("http-status-codes");
+const { BadRequestError, NotFoundError } = require('../errors');
 
 function getUserId(req) {
   return req.user?.userId || req.user?.id || req.user?._id;
@@ -18,15 +19,13 @@ const registerDo = async (req, res, next) => {
   const { name, email, password, password1 } = req.body;
 
   if (!name || !email || !password || !password1) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      error: "Name, email, password, and password confirmation are required",
-    });
+    throw new BadRequestError(
+      "Name, email, password, and password confirmation are required",
+    );
   }
 
   if (password !== password1) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      error: "Passwords do not match",
-    });
+    throw new BadRequestError("Passwords do not match");
   }
 
   try {
@@ -47,15 +46,11 @@ const registerDo = async (req, res, next) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        error: "Email already registered",
-      });
+      throw new BadRequestError("Email already registered");
     }
 
     if (error.name === "ValidationError") {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        error: error.message,
-      });
+      throw new BadRequestError(error.message);
     }
 
     return next(error);
@@ -104,9 +99,7 @@ const updateMe = async (req, res, next) => {
     }).select("_id name email");
 
     if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "User not found",
-      });
+      throw new NotFoundError("User not found");
     }
 
     return res.status(StatusCodes.OK).json({
@@ -116,15 +109,11 @@ const updateMe = async (req, res, next) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        error: "Email already registered",
-      });
+      throw new BadRequestError("Email already registered");
     }
 
     if (error.name === "ValidationError") {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        error: error.message,
-      });
+      throw new BadRequestError(error.message);
     }
 
     return next(error);
@@ -143,24 +132,20 @@ const updatePassword = async (req, res, next) => {
   const { currentPassword, newPassword, newPassword1 } = req.body;
 
   if (!currentPassword || !newPassword || !newPassword1) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Current password, new password, and password confirmation are required",
-    });
+    throw new BadRequestError(
+      "Current password, new password, and password confirmation are required",
+    );
   }
 
   if (newPassword !== newPassword1) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Passwords do not match",
-    });
+    throw new BadRequestError("Passwords do not match");
   }
 
   try {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "User not found",
-      });
+      throw new NotFoundError("User not found");
     }
 
     if (typeof user.comparePassword === "function") {

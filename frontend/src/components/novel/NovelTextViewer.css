@@ -315,3 +315,176 @@
     bottom: 14px;
   }
 }
+
+.novel-actions {
+  width: min(92vw, 860px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 4;
+}
+
+.novel-actions button,
+.novel-finish-actions button {
+  max-width: min(92vw, 760px);
+  min-height: 52px;
+  padding: 12px 24px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.btn-primary,
+.btn-secondary {
+  width: auto;
+  max-width: min(92vw, 760px);
+}
+
+@media (max-width: 640px) {
+  .novel-actions {
+    width: 94vw;
+  }
+
+  .novel-actions button,
+  .novel-finish-actions button {
+    width: 100%;
+    max-width: 100%;
+    font-size: 15px;
+    padding: 11px 16px;
+  }
+}
+.novel-actions {
+  width: min(92vw, 860px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 4;
+}
+
+.novel-actions button,
+.novel-finish-actions button {
+  max-width: min(92vw, 760px);
+  min-height: 52px;
+  padding: 12px 24px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.btn-primary,
+.btn-secondary {
+  width: auto;
+  max-width: min(92vw, 760px);
+}
+
+.novel-actions button.choice-seen {
+  background: #8e8aa8;
+  color: #f4f2ff;
+  opacity: 0.78;
+}
+
+.novel-actions button.choice-seen:hover {
+  opacity: 0.92;
+}
+
+.speech-bubble {
+  max-width: min(78vw, 640px);
+  max-height: 230px;
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.speech-bubble .content {
+  white-space: pre-line;
+}
+
+@media (max-width: 640px) {
+  .novel-actions {
+    width: 94vw;
+  }
+
+  .novel-actions button,
+  .novel-finish-actions button {
+    width: 100%;
+    max-width: 100%;
+    font-size: 15px;
+    padding: 11px 16px;
+  }
+
+  .speech-bubble {
+    max-width: 88vw;
+    max-height: 210px;
+  }
+}
+.novel-root .novel-actions {
+  width: min(92vw, 860px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 4;
+}
+
+.novel-root .novel-actions button,
+.novel-root .novel-finish-actions button {
+  max-width: min(92vw, 760px);
+  min-height: 52px;
+  padding: 12px 24px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.novel-root .btn-primary,
+.novel-root .btn-secondary {
+  width: auto;
+  max-width: min(92vw, 760px);
+}
+
+.novel-root .novel-actions button.choice-seen {
+  background: #8e8aa8;
+  color: #f4f2ff;
+  opacity: 0.78;
+}
+
+.novel-root .novel-actions button.choice-seen:hover {
+  opacity: 0.92;
+}
+
+.novel-root .speech-bubble {
+  max-width: min(78vw, 640px);
+  max-height: none;
+  overflow: visible;
+  z-index: 5;
+}
+
+.novel-root .speech-bubble .content {
+  white-space: pre-line;
+}
+
+@media (max-width: 640px) {
+  .novel-root .novel-actions {
+    width: 94vw;
+  }
+
+  .novel-root .novel-actions button,
+  .novel-root .novel-finish-actions button {
+    width: 100%;
+    max-width: 100%;
+    font-size: 15px;
+    padding: 11px 16px;
+  }
+
+  .novel-root .speech-bubble {
+    max-width: 88vw;
+    max-height: none;
+  }
+}
