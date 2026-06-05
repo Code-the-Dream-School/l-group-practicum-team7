@@ -11,10 +11,14 @@ interface DailyLogData {
   workload: number;
 }
 
-function AppHeader() {
+interface AppHeaderProps {
+  onEntryCreated: () => void;
+}
+
+function AppHeader({ onEntryCreated }: AppHeaderProps) {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
 
- const handleSave = async (data: DailyLogData) => {
+  const handleSave = async (data: DailyLogData): Promise<void> => {
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -28,9 +32,7 @@ function AppHeader() {
       workload: data.workload,
     };
 
-    console.log('Send to backend:', payload);
-
-    const response = await fetch(`http://localhost:8080/api/entries`, {
+    const response = await fetch(`${API}/api/entries`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,9 +47,7 @@ function AppHeader() {
       throw new Error(result?.message || result?.error || 'Failed to save daily log');
     }
 
-    console.log('Response from backend:', result);
-
-    return result;
+    onEntryCreated();
   };
 
 

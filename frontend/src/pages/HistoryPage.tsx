@@ -217,18 +217,20 @@ function HistoryPage() {
     };
 
     window.addEventListener('authChanged', refreshAfterAuthChange);
+    window.addEventListener('entriesChanged', refreshAfterAuthChange);
     window.addEventListener('storage', refreshAfterAuthChange);
     window.addEventListener('focus', refreshAfterAuthChange);
 
     return () => {
       window.removeEventListener('authChanged', refreshAfterAuthChange);
+      window.removeEventListener('entriesChanged', refreshAfterAuthChange);
       window.removeEventListener('storage', refreshAfterAuthChange);
       window.removeEventListener('focus', refreshAfterAuthChange);
     };
   }, []);
 
   useEffect(() => {
-    loadEntries();
+    void Promise.resolve().then(loadEntries);
   }, [loadEntries, authRefreshKey]);
 
   return (

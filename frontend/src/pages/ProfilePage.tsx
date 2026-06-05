@@ -32,8 +32,10 @@ function ProfilePage({ user, onLogout }: ProfilePageProps) {
   const initial = displayName.charAt(0).toUpperCase();
 
   useEffect(() => {
-    setName(user?.name || user?.username || 'User');
-    setEmail(user?.email || '');
+    queueMicrotask(() => {
+      setName(user?.name || user?.username || 'User');
+      setEmail(user?.email || '');
+    });
   }, [user]);
 
   async function loadProfile() {
@@ -62,7 +64,7 @@ function ProfilePage({ user, onLogout }: ProfilePageProps) {
   }
 
   useEffect(() => {
-    loadProfile();
+    void Promise.resolve().then(loadProfile);
   }, []);
 
   async function saveProfile() {
