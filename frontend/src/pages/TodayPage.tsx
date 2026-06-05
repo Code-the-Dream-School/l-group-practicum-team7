@@ -50,8 +50,9 @@ function TodayPage({ entries, insights, loading, error }: TodayPageProps) {
     );
   }
 
-  const trendData = [...entries.slice(0, 7)].reverse().map((entry) => ({
+  const trendData = [...entries].reverse().map((entry) => ({
     day: entry.date.toLocaleDateString('en-US', { weekday: 'short' }),
+    date: entry.date,
     stress: entry.stress,
     workload: entry.workload,
   }));
