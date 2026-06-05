@@ -28,7 +28,7 @@ async function getWithAuth<T>(path: string, token: string): Promise<T> {
 }
 
 export async function getEntries(token: string): Promise<Entry[]> {
-  const entries = await getWithAuth<ApiEntry[]>('/api/entries?limit=30', token);
+  const entries = await getWithAuth<ApiEntry[]>('/api/entries', token);
 
   return entries.map((entry) => ({
     ...entry,
