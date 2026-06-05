@@ -1,15 +1,58 @@
+import AveragesSummary from '../components/dashboard/AveragesSummary';
+import InsightHighlights from '../components/dashboard/InsightHighlights';
 import MetricCards from '../components/dashboard/MetricCards';
 import RecommendedActions from '../components/dashboard/RecommendedActions';
 import RiskSummaryCard from '../components/dashboard/RiskSummaryCard';
 import WeeklyTrendsChart from '../components/dashboard/WeeklyTrendsChart';
-import { mockEntryInputs } from '../services/mockEntries';
-import { buildEntry, getRecommendations } from '../utils/wellness';
+import type { Entry, InsightsResponse } from '../types/wellness';
+import { getRecommendations } from '../utils/wellness';
 
-function TodayPage() {
-  const entries = mockEntryInputs.map(buildEntry);
-  const currentEntry = entries[entries.length - 1]; // Get the last entry (most recent)
-  const trendData = entries.map((entry) => ({
+type TodayPageProps = {
+  entries: Entry[];
+  insights: InsightsResponse | null;
+  loading: boolean;
+  error: string | null;
+};
+
+function TodayPage({ entries, insights, loading, error }: TodayPageProps) {
+  if (loading) {
+    return (
+      <main className="dashboard" aria-label="Today dashboard">
+        <section className="dashboard-status">
+          <h1>Loading your dashboard...</h1>
+          <p>Getting your latest wellness entries and insights.</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="dashboard" aria-label="Today dashboard">
+        <section className="dashboard-status dashboard-error">
+          <h1>Unable to load dashboard</h1>
+          <p>{error}</p>
+        </section>
+      </main>
+    );
+  }
+
+  const currentEntry = entries[0];
+
+  if (!currentEntry) {
+    return (
+      <main className="dashboard" aria-label="Today dashboard">
+        <section className="dashboard-status">
+          <h1>No daily logs yet</h1>
+          <p>Use the plus button to add your first check-in and generate insights.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const trendData = [...entries].reverse().map((entry) => ({
     day: entry.date.toLocaleDateString('en-US', { weekday: 'short' }),
+    date: entry.date,
     stress: entry.stress,
     workload: entry.workload,
   }));
@@ -19,8 +62,10 @@ function TodayPage() {
     <main className="dashboard" aria-label="Today dashboard">
       <RiskSummaryCard entry={currentEntry} />
       <MetricCards entry={currentEntry} />
+      {insights && <AveragesSummary averages={insights.averages} />}
       <WeeklyTrendsChart trendData={trendData} />
       <RecommendedActions recommendations={recommendations} />
+      {insights && <InsightHighlights insights={insights.insights} />}
     </main>
   );
 }

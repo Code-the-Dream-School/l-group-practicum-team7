@@ -1,19 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import AuthModal from "./components/Auth/AuthModal";
-import Header from "./components/Layout/Header";
-import About from "./pages/About";
-import Insights from "./components/Insights/Insights";
-import EntryForm from "./components/Forms/EntryForm";
-import ToolsPage from "./pages/ToolsPage";
-import NovelPage from "./pages/NovelPage";
-import HomePage from "./pages/Home";
-
 import AppHeader from "./components/Layout/AppHeader";
 import BottomNav, { type MobileTab } from "./components/Layout/BottomNav";
-import TodayPage from "./pages/TodayPage";
+import About from "./pages/About";
 import HistoryPage from "./pages/HistoryPage";
+import HomePage from "./pages/Home";
+import NovelPage from "./pages/NovelPage";
 import ProfilePage from "./pages/ProfilePage";
+import TodayPage from "./pages/TodayPage";
+import ToolsPage from "./pages/ToolsPage";
+import { getEntries, getInsights } from "./services/wellnessApi";
+import type { Entry, InsightsResponse } from "./types/wellness";
 
 import "./App.css";
 import "./styles/App.css";
@@ -47,15 +45,54 @@ type User = {
 type MeResponse = Record<string, unknown>;
 
 function App(): React.ReactElement {
-  const [checking, setChecking] = useState<boolean>(true);
+  const [checking, setChecking] = useState<boolean>(() => Boolean(localStorage.getItem("token")));
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [route, setRoute] = useState<Route>("landing");
+  const [route, setRoute] = useState<Route>(() =>
+    localStorage.getItem("token") ? "backend" : "landing"
+  );
   const [mobileTab, setMobileTab] = useState<MobileTab>("today");
-  const [, setInsightsRefreshKey] = useState<number>(0);
-  const [lastEntryText, setLastEntryText] = useState<string>("");
   const [pendingRoute, setPendingRoute] = useState<Route | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [insights, setInsights] = useState<InsightsResponse | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const dashboardRequestId = useRef<number>(0);
+
+  const loadDashboardData = useCallback(async (token: string): Promise<void> => {
+    const requestId = dashboardRequestId.current + 1;
+    dashboardRequestId.current = requestId;
+    setDashboardLoading(true);
+    setDashboardError(null);
+
+    try {
+      const [savedEntries, generatedInsights] = await Promise.all([
+        getEntries(token),
+        getInsights(token),
+      ]);
+
+      if (requestId !== dashboardRequestId.current) {
+        return;
+      }
+
+      setEntries(savedEntries);
+      setInsights(generatedInsights);
+    } catch (error) {
+      if (requestId !== dashboardRequestId.current) {
+        return;
+      }
+
+      const message = error instanceof Error ? error.message : "Unable to load dashboard data";
+      setDashboardError(message);
+      setEntries([]);
+      setInsights(null);
+    } finally {
+      if (requestId === dashboardRequestId.current) {
+        setDashboardLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const onOpenTools = () => {
@@ -65,7 +102,6 @@ function App(): React.ReactElement {
         setPendingRoute("tools");
         setAuthMode("login");
         setShowAuth(true);
-        setRoute("auth");
         return;
       }
 
@@ -77,12 +113,6 @@ function App(): React.ReactElement {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      setUser(null);
-      setChecking(false);
-      setRoute("landing");
-      setAuthMode("login");
-      setShowAuth(false);
-
       return () => {
         window.removeEventListener("openTools", onOpenTools);
       };
@@ -103,6 +133,7 @@ function App(): React.ReactElement {
       .then((userData) => {
         setUser({ ...userData, token });
         setRoute("backend");
+        void loadDashboardData(token);
       })
       .catch(() => {
         localStorage.removeItem("token");
@@ -118,13 +149,14 @@ function App(): React.ReactElement {
     return () => {
       window.removeEventListener("openTools", onOpenTools);
     };
-  }, []);
+  }, [loadDashboardData]);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
 
     if (userData?.token) {
       localStorage.setItem("token", userData.token);
+      void loadDashboardData(userData.token);
     }
 
     setShowAuth(false);
@@ -134,52 +166,38 @@ function App(): React.ReactElement {
       setPendingRoute(null);
     } else {
       setRoute("backend");
+      setMobileTab("today");
     }
-  };
-
-  const handleLoginOpen = (mode?: AuthMode): void => {
-    setAuthMode(mode === "signup" ? "register" : mode || "login");
-    setShowAuth(true);
-    setRoute('auth');
   };
 
   const handleLogout = (): void => {
     localStorage.removeItem("token");
+    dashboardRequestId.current += 1;
     setUser(null);
+    setEntries([]);
+    setInsights(null);
+    setDashboardLoading(false);
+    setDashboardError(null);
     setPendingRoute(null);
     setRoute("landing");
     setAuthMode("login");
     setShowAuth(false);
   };
 
-  const handleNavigate = (nextRoute: Route): void => {
-    if (!user && nextRoute !== "about" && nextRoute !== "landing") {
-      setPendingRoute(nextRoute);
-      setAuthMode("login");
-      setShowAuth(true);
-      setRoute("auth");
-      return;
+  const handleEntryCreated = (): void => {
+    if (user?.token) {
+      void loadDashboardData(user.token);
     }
 
-    if (nextRoute === "insights") {
-      try {
-        window.dispatchEvent(
-          new CustomEvent("insights.entry", {
-            detail: { text: lastEntryText },
-          }),
-        );
-      } catch (e) {}
+    window.dispatchEvent(new Event("entriesChanged"));
+  };
 
+  const handleMobileTabChange = (tab: MobileTab): void => {
+    setMobileTab(tab);
+
+    if (route === "tools" || route === "dialogues") {
       setRoute("backend");
-      return;
     }
-
-    if (nextRoute === "novel") {
-      setRoute("dialogues");
-      return;
-    }
-
-    setRoute(nextRoute);
   };
 
   if (checking) {
@@ -190,94 +208,45 @@ function App(): React.ReactElement {
     );
   }
 
+  const showToolPage = route === "tools" && user;
+  const showDialoguePage = route === "dialogues" && user;
+  const showMainTabs = !showToolPage && !showDialoguePage;
+
   return (
     <div className="app">
-      {route !== "landing" && (
-        <section className="app-shell">
-          <AppHeader />
-
-          {mobileTab === "today" && <TodayPage />}
-          {mobileTab === "history" && <HistoryPage />}
-          {mobileTab === "profile" && (
-            <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
-          )}
-
-          <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
-        </section>
-      )}
-
       {route === "landing" ? (
         <HomePage
           onStartHere={() => {
             setAuthMode("register");
             setShowAuth(true);
-            setRoute("auth");
           }}
         />
       ) : (
-        <section className="backend-front-section">
-          <h2 className="backend-front-title">&lt;backend front&gt;</h2>
+        <section className="app-shell">
+          <AppHeader onEntryCreated={handleEntryCreated} />
 
-          <Header
-            user={user ?? undefined}
-            onLogin={handleLoginOpen}
-            onLogout={handleLogout}
-            onNavigate={handleNavigate}
-          />
+          {showToolPage && <ToolsPage />}
+          {showDialoguePage && <NovelPage />}
 
-          <main className="app-main">
-            {route === "backend" &&
-              (user ? (
-                <>
-                  <h1>Dashboard</h1>
+          {showMainTabs && (
+            <>
+              {mobileTab === "today" && (
+                <TodayPage
+                  entries={entries}
+                  insights={insights}
+                  loading={dashboardLoading}
+                  error={dashboardError}
+                />
+              )}
+              {mobileTab === "history" && <HistoryPage />}
+              {mobileTab === "profile" && (
+                <ProfilePage user={user ?? undefined} onLogout={handleLogout} />
+              )}
+              {mobileTab === "about" && <About />}
+            </>
+          )}
 
-                  <EntryForm
-                    onEntryCreated={(text?: string) => {
-                      setInsightsRefreshKey((prev) => prev + 1);
-
-                      if (typeof text === "string") {
-                        setLastEntryText(text);
-                      }
-
-                      try {
-                        window.dispatchEvent(
-                          new CustomEvent("insights.entry", {
-                            detail: { text: text || "" },
-                          }),
-                        );
-                      } catch (e) {}
-                    }}
-                  />
-
-                  <hr style={{ margin: "2rem 0" }} />
-
-                  <Insights />
-                </>
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
-
-            {route === "dialogues" &&
-              (user ? <NovelPage /> : <p>Please log in to continue.</p>)}
-
-            {route === "tools" &&
-              (user ? (
-                <ToolsPage onClose={() => setRoute("dialogues")} />
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
-
-            {route === "about" && <About />}
-
-            {route === "search" &&
-              (user ? (
-                <p>Search page placeholder</p>
-              ) : (
-                <p>Please log in to continue.</p>
-              ))}
-
-            {route === "auth" && !user && <p>Please log in to continue.</p>}
-          </main>
+          <BottomNav activeTab={mobileTab} onTabChange={handleMobileTabChange} />
         </section>
       )}
 
@@ -287,10 +256,6 @@ function App(): React.ReactElement {
           disableClose={false}
           onClose={() => {
             setShowAuth(false);
-
-            if (!user && route === "auth") {
-              setRoute("landing");
-            }
           }}
           onAuthed={handleAuthed}
         />
