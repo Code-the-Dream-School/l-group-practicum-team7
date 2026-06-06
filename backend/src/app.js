@@ -1,6 +1,8 @@
 require("dotenv").config();
 require("express-async-errors");
 
+const path = require("path");
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -16,6 +18,7 @@ const insightsRoutes = require("./routes/insightsRoutes.js");
 const sessionRoutes = require("./routes/sessionRoutes");
 const entryRoutes = require("./routes/entryRoutes.js");
 const dialogueRoutes = require("./routes/dialogueRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 
 const passportInit = require("./passport/passportInit");
 const attachUserFromJwt = require("./middleware/attachUserFromJwt");
@@ -25,13 +28,31 @@ const errorHandlerMiddleware = require("./middleware/error-handler");
 
 const app = express();
 
-app.use(helmet());
+const isProduction = process.env.NODE_ENV === "production";
+const frontendDist = path.join(__dirname, "../../frontend/dist");
 
-const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN || "http://localhost:5173",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-];
+if (isProduction) {
+  app.set("trust proxy", 1);
+  console.log("Serving frontend from:", frontendDist);
+
+  app.use(express.static(frontendDist));
+}
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+const allowedOrigins = (
+  process.env.CLIENT_ORIGINS ||
+  process.env.FRONTEND_ORIGIN ||
+  "http://localhost:5173,http://localhost:5174"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const corsOptions = {
   origin(origin, callback) {
@@ -46,16 +67,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(
-  cors({
-    origin: ["http://localhost:5174", "http://localhost:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
-
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("dev"));
@@ -67,23 +80,32 @@ app.use(
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
-  }),
+  })
 );
 
 passportInit();
 app.use(passport.initialize());
 
 app.use(attachUserFromJwt);
+
 app.use("/api/auth", sessionRoutes);
-
-app.get("/", (req, res) => {
-  res.send("Backend API is running");
-});
-
 app.use("/api/hello", helloRoutes);
 app.use("/api/entries", entryRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/dialogues", dialogueRoutes);
+app.use("/api/subscription", subscriptionRoutes);
+
+if (!isProduction) {
+  app.get("/", (req, res) => {
+    res.send("Backend API is running");
+  });
+}
+
+if (isProduction) {
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

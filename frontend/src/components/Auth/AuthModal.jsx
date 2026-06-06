@@ -9,12 +9,13 @@ export default function AuthModal({
   disableClose = false,
   initialMode = "login",
 }) {
-  const [mode, setMode] = useState(initialMode);
+  const normalizedInitialMode = initialMode === 'signup' ? 'register' : initialMode;
+  const [mode, setMode] = useState(normalizedInitialMode || 'login');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
   React.useEffect(() => {
-    setMode(initialMode);
+    setMode(initialMode === 'signup' ? 'register' : initialMode || 'login');
   }, [initialMode]);
 
   const handleSubmit = async (e) => {
@@ -84,15 +85,22 @@ export default function AuthModal({
         )}
 
         <div className="auth-header">
+          
           {mode === "login"
+           
             ? "Login"
+           
             : mode === "register"
-              ? "SignUp"
+             
+              ? "Sign Up"
+             
               : mode === "forgot"
+               
                 ? "Forgot password?"
+               
                 : "Reset password"}
+        
         </div>
-
         {mode === "forgot" ? (
           <form onSubmit={handleForgot} className="auth-form">
             <label>
@@ -111,18 +119,20 @@ export default function AuthModal({
         ) : (
           <>
             <div className="tabs">
-              <button
-                className={mode === "login" ? "tab active" : "tab"}
+              <button 
+                className={mode === "login" ? "tab active" : "tab"} 
                 onClick={() => setMode("login")}
-              >
+                
+                >
+                  
                 Login
               </button>
               <button
                 className={mode === "register" ? "tab active" : "tab"}
                 onClick={() => setMode("register")}
               >
-                SignUp
-              </button>
+                Sign Up
+              </button>            
             </div>
 
             <form className="auth-form" onSubmit={handleSubmit}>

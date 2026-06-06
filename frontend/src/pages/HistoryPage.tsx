@@ -4,8 +4,11 @@ import {
   Battery,
   BriefcaseBusiness,
   CalendarDays,
+  Check,
   Moon,
+  Pencil,
   Trash2,
+  X,
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
@@ -22,6 +25,14 @@ type Entry = {
   createdAt?: string;
 };
 
+type EntryDraft = {
+  stress: string;
+  energy: string;
+  workload: string;
+  sleepHours: string;
+  date: string;
+};
+
 type FilterMode = '7' | '30' | 'custom';
 
 function toIsoDateValue(date: Date) {
@@ -30,6 +41,16 @@ function toIsoDateValue(date: Date) {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
+}
+
+function toDateInputValue(value?: string) {
+  if (!value) return '';
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return '';
+
+  return toIsoDateValue(date);
 }
 
 function parseUsDateInput(value: string) {
@@ -125,6 +146,36 @@ function normalizeEntries(data: unknown): Entry[] {
   return [];
 }
 
+function createDraft(entry: Entry): EntryDraft {
+  return {
+    stress: String(entry.stress ?? 1),
+    energy: String(entry.energy ?? 1),
+    workload: String(entry.workload ?? 1),
+    sleepHours: String(entry.sleepHours ?? 8),
+    date: toDateInputValue(entry.date || entry.createdAt),
+  };
+}
+
+async function updateEntryRequest(id: string, token: string, payload: unknown) {
+  const makeRequest = (method: 'PUT' | 'PATCH') =>
+    fetch(`${API}/api/entries/${id}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+  const putResponse = await makeRequest('PUT');
+
+  if (putResponse.status !== 404 && putResponse.status !== 405) {
+    return putResponse;
+  }
+
+  return makeRequest('PATCH');
+}
+
 function HistoryPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +184,10 @@ function HistoryPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [authRefreshKey, setAuthRefreshKey] = useState(0);
+  const [editingId, setEditingId] = useState('');
+  const [editDraft, setEditDraft] = useState<EntryDraft | null>(null);
+  const [savingId, setSavingId] = useState('');
+  const [editError, setEditError] = useState('');
 
   const range = useMemo(
     () => getDateRange(filterMode, from, to),
@@ -184,6 +239,81 @@ function HistoryPage() {
     }
   }, [range.from, range.to]);
 
+  function startEditing(entry: Entry) {
+    setEditingId(entry._id);
+    setEditDraft(createDraft(entry));
+    setEditError('');
+  }
+
+  function cancelEditing() {
+    setEditingId('');
+    setEditDraft(null);
+    setSavingId('');
+    setEditError('');
+  }
+
+  function updateDraft(field: keyof EntryDraft, value: string) {
+    setEditDraft((current) =>
+      current
+        ? {
+            ...current,
+            [field]: value,
+          }
+        : current
+    );
+  }
+
+  async function saveEntry(id: string) {
+    const token = localStorage.getItem('token');
+
+    if (!token || !editDraft) return;
+
+    const payload = {
+      stress: Number(editDraft.stress),
+      workload: Number(editDraft.workload),
+      sleepHours: Number(editDraft.sleepHours),
+      energy: Number(editDraft.energy),
+      date: editDraft.date ? new Date(editDraft.date).toISOString() : undefined,
+    };
+
+    if (
+      payload.stress < 1 ||
+      payload.stress > 5 ||
+      payload.workload < 1 ||
+      payload.workload > 5 ||
+      payload.energy < 1 ||
+      payload.energy > 5 ||
+      payload.sleepHours < 0 ||
+      payload.sleepHours > 24
+    ) {
+      setEditError('Please keep stress, workload, and energy from 1 to 5. Sleep must be 0 to 24 hours.');
+      return;
+    }
+
+    setSavingId(id);
+    setEditError('');
+
+    try {
+      const response = await updateEntryRequest(id, token, payload);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to update entry');
+      }
+
+      setEntries((current) =>
+        current.map((entry) => (entry._id === id ? data : entry))
+      );
+
+      window.dispatchEvent(new Event('insights.entry'));
+      cancelEditing();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update entry');
+    } finally {
+      setSavingId('');
+    }
+  }
+
   async function deleteEntry(id: string) {
     const token = localStorage.getItem('token');
 
@@ -206,6 +336,12 @@ function HistoryPage() {
       }
 
       setEntries((current) => current.filter((entry) => entry._id !== id));
+
+      if (editingId === id) {
+        cancelEditing();
+      }
+
+      window.dispatchEvent(new Event('insights.entry'));
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete entry');
     }
@@ -290,7 +426,9 @@ function HistoryPage() {
 
         {loading && <div className="history-state">Loading entries...</div>}
 
-        {!loading && error && <div className="history-state error">{error}</div>}
+        {!loading && error && (
+          <div className="history-state error">{error}</div>
+        )}
 
         {!loading && !error && entries.length === 0 && (
           <div className="history-state">No entries found for this period.</div>
@@ -300,6 +438,7 @@ function HistoryPage() {
           <section className="history-list">
             {entries.map((entry) => {
               const displayDate = entry.date || entry.createdAt;
+              const isEditing = editingId === entry._id;
 
               return (
                 <article className="history-card" key={entry._id}>
@@ -313,41 +452,153 @@ function HistoryPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      className="history-delete"
-                      onClick={() => deleteEntry(entry._id)}
-                      aria-label="Delete entry"
-                    >
-                      <Trash2 size={17} aria-hidden="true" />
-                    </button>
+                    <div className="history-card-actions">
+                      {isEditing ? (
+                        <>
+                          <button
+                            type="button"
+                            className="history-action-button history-save"
+                            onClick={() => saveEntry(entry._id)}
+                            aria-label="Save entry"
+                            disabled={savingId === entry._id}
+                          >
+                            <Check size={17} aria-hidden="true" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="history-action-button history-cancel"
+                            onClick={cancelEditing}
+                            aria-label="Cancel editing"
+                            disabled={savingId === entry._id}
+                          >
+                            <X size={17} aria-hidden="true" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="history-action-button history-edit-button"
+                            onClick={() => startEditing(entry)}
+                            aria-label="Edit entry"
+                          >
+                            <Pencil size={17} aria-hidden="true" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="history-action-button history-delete"
+                            onClick={() => deleteEntry(entry._id)}
+                            aria-label="Delete entry"
+                          >
+                            <Trash2 size={17} aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="history-metrics">
-                    <div className="history-metric">
-                      <Activity size={16} aria-hidden="true" />
-                      <span>Stress</span>
-                      <strong>{entry.stress}/5</strong>
-                    </div>
+                  {isEditing && editDraft ? (
+                    <div className="history-edit-form">
+                      <label>
+                        <span>Stress</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="1"
+                          value={editDraft.stress}
+                          onChange={(event) =>
+                            updateDraft('stress', event.target.value)
+                          }
+                        />
+                      </label>
 
-                    <div className="history-metric">
-                      <Battery size={16} aria-hidden="true" />
-                      <span>Energy</span>
-                      <strong>{entry.energy}/5</strong>
-                    </div>
+                      <label>
+                        <span>Energy</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="1"
+                          value={editDraft.energy}
+                          onChange={(event) =>
+                            updateDraft('energy', event.target.value)
+                          }
+                        />
+                      </label>
 
-                    <div className="history-metric">
-                      <Moon size={16} aria-hidden="true" />
-                      <span>Sleep</span>
-                      <strong>{entry.sleepHours}h</strong>
-                    </div>
+                      <label>
+                        <span>Sleep</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="24"
+                          step="0.5"
+                          value={editDraft.sleepHours}
+                          onChange={(event) =>
+                            updateDraft('sleepHours', event.target.value)
+                          }
+                        />
+                      </label>
 
-                    <div className="history-metric">
-                      <BriefcaseBusiness size={16} aria-hidden="true" />
-                      <span>Workload</span>
-                      <strong>{entry.workload}/5</strong>
+                      <label>
+                        <span>Workload</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="1"
+                          value={editDraft.workload}
+                          onChange={(event) =>
+                            updateDraft('workload', event.target.value)
+                          }
+                        />
+                      </label>
+
+                      <label>
+                        <span>Date</span>
+                        <input
+                          type="date"
+                          value={editDraft.date}
+                          onChange={(event) =>
+                            updateDraft('date', event.target.value)
+                          }
+                        />
+                      </label>
+
+                      {editError && (
+                        <div className="history-edit-error">{editError}</div>
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="history-metrics">
+                      <div className="history-metric">
+                        <Activity size={16} aria-hidden="true" />
+                        <span>Stress</span>
+                        <strong>{entry.stress}/5</strong>
+                      </div>
+
+                      <div className="history-metric">
+                        <Battery size={16} aria-hidden="true" />
+                        <span>Energy</span>
+                        <strong>{entry.energy}/5</strong>
+                      </div>
+
+                      <div className="history-metric">
+                        <Moon size={16} aria-hidden="true" />
+                        <span>Sleep</span>
+                        <strong>{entry.sleepHours}h</strong>
+                      </div>
+
+                      <div className="history-metric">
+                        <BriefcaseBusiness size={16} aria-hidden="true" />
+                        <span>Workload</span>
+                        <strong>{entry.workload}/5</strong>
+                      </div>
+                    </div>
+                  )}
                 </article>
               );
             })}

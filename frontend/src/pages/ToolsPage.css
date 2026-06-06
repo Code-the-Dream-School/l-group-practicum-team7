@@ -40,43 +40,42 @@
   font-weight: 700;
 }
 
-.tools-admin-actions,
-.tool-row-actions,
-.tool-experience-actions,
-.tool-modal-actions {
+.tools-admin-actions {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.tools-admin-actions,
-.tool-row-actions {
-  display: grid;
-  grid-template-columns: repeat(3, max-content);
-  align-items: center;
-  justify-content: end;
-  gap: 10px;
   flex: 0 0 auto;
-}
-
-.tools-empty-state,
-.tool-row-capsule,
-.tool-writing-card {
-  background: var(--tool-surface);
-  box-shadow: var(--tool-shadow-soft);
 }
 
 .tools-empty-state {
   padding: 22px;
   border-radius: 24px;
   margin-bottom: 22px;
+  background: var(--tool-surface);
+  box-shadow: var(--tool-shadow-soft);
+  color: var(--tool-muted);
+  font-weight: 700;
+}
+
+.tools-empty-state p {
+  margin: 0 0 10px;
+}
+
+.tools-empty-state p:last-of-type {
+  margin-bottom: 12px;
 }
 
 .tools-empty-state pre {
+  margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   background: var(--tool-soft);
   padding: 12px;
   border-radius: 12px;
+  color: var(--tool-text);
+  font-size: 13px;
 }
 
 .tools-grid-rows {
@@ -101,26 +100,6 @@
   align-items: center;
   gap: 18px;
   min-width: 0;
-}
-
-.tool-row-details {
-  min-width: 0;
-}
-
-.tool-row-title,
-.tool-row-desc {
-  overflow-wrap: anywhere;
-}
-
-.tool-row-desc {
-  max-width: 760px;
-}
-
-.btn-use-capsule,
-.btn-ghost-capsule {
-  white-space: nowrap;
-  min-width: 96px;
-  text-align: center;
 }
 
 .tool-icon-circle {
@@ -148,14 +127,25 @@
   line-height: 1.15;
   font-weight: 900;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
 }
 
 .tool-row-desc {
+  max-width: 760px;
   margin: 8px 0 0;
   color: var(--tool-muted);
   font-size: 15px;
   line-height: 1.45;
   font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tool-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .btn-primary,
@@ -171,15 +161,19 @@
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
-    background 0.18s ease;
+    background 0.18s ease,
+    opacity 0.18s ease;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-use-capsule,
 .btn-ghost-capsule {
+  min-width: 96px;
   padding: 10px 16px;
   font-size: 14px;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .btn-primary,
@@ -189,8 +183,9 @@
   color: #ffffff;
 }
 
-.btn-use-capsule {
-  box-shadow: 0 14px 28px rgba(91, 78, 230, 0.24);
+.btn-use-capsule,
+.tool-main-action {
+  box-shadow: var(--tool-shadow-purple);
 }
 
 .btn-secondary,
@@ -207,6 +202,17 @@
 .tool-main-action:hover,
 .tool-secondary-action:hover {
   transform: translateY(-1px);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-use-capsule:disabled,
+.btn-ghost-capsule:disabled,
+.tool-main-action:disabled,
+.tool-secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
 }
 
 .tool-modal-backdrop {
@@ -253,21 +259,18 @@
   cursor: pointer;
 }
 
-.tool-breathing-view,
-.tool-experience-heading {
-  text-align: center;
-}
-
 .tool-breathing-view {
   min-height: 620px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
 .tool-experience-heading {
   max-width: 720px;
   margin: 0 auto 26px;
+  text-align: center;
 }
 
 .tool-experience-heading h2 {
@@ -358,8 +361,11 @@
 }
 
 .tool-experience-actions {
+  display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .tool-main-action,
@@ -369,12 +375,16 @@
   font-size: 18px;
 }
 
-.tool-main-action {
-  box-shadow: var(--tool-shadow-purple);
-}
-
 .tool-main-action.full {
   width: 100%;
+}
+
+.tool-saved-message {
+  margin: 14px 0 0;
+  color: var(--tool-primary);
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
 }
 
 .tool-writing-view {
@@ -386,13 +396,12 @@
   margin: 28px auto 30px;
   padding: 36px;
   border-radius: 34px;
+  background: var(--tool-surface);
+  box-shadow: var(--tool-shadow-soft);
 }
 
-.tool-textarea,
-.tool-structured-field,
-.tool-priority-row {
-  background: var(--tool-soft);
-  border-radius: 28px;
+.tool-writing-card .tool-main-action {
+  margin-top: 14px;
 }
 
 .tool-textarea {
@@ -401,8 +410,10 @@
   min-height: 180px;
   padding: 28px;
   border: 0;
+  border-radius: 28px;
   resize: vertical;
   box-sizing: border-box;
+  background: var(--tool-soft);
   color: var(--tool-text);
   font: inherit;
   font-size: 20px;
@@ -428,6 +439,8 @@
   align-items: center;
   gap: 14px;
   padding: 18px 22px;
+  border-radius: 28px;
+  background: var(--tool-soft);
 }
 
 .tool-structured-field {
@@ -462,10 +475,6 @@
   border-radius: 999px;
   background: #ffffff;
   cursor: pointer;
-}
-
-.tool-writing-card .tool-main-action {
-  margin-top: 14px;
 }
 
 .tool-history-section {
@@ -516,19 +525,56 @@
   font-weight: 700;
 }
 
+@media (max-width: 900px) {
+  .tool-row-capsule {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .tool-row-actions {
+    justify-content: flex-start;
+  }
+
+  .tool-priority-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 760px) {
   .tools-page {
     padding: 24px 14px 64px;
   }
 
-  .tools-header-row,
-  .tool-row-capsule {
+  .tools-header-row {
     flex-direction: column;
   }
 
   .tools-admin-actions,
   .tool-row-actions {
-    justify-content: flex-start;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tools-admin-actions button,
+  .tool-row-actions button,
+  .tool-main-action,
+  .tool-secondary-action {
+    width: 100%;
+  }
+
+  .tool-row-capsule {
+    padding: 20px;
+    border-radius: 26px;
+  }
+
+  .tool-row-left {
+    align-items: flex-start;
+  }
+
+  .tool-icon-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
   }
 
   .tool-modal-backdrop {
@@ -562,19 +608,11 @@
     font-size: 44px;
   }
 
-  .tool-main-action,
-  .tool-secondary-action,
-  .btn-use-capsule,
-  .btn-ghost-capsule {
-    width: 100%;
-  }
-
   .tool-writing-card {
     padding: 20px;
   }
 
-  .tool-structured-field,
-  .tool-priority-row {
+  .tool-structured-field {
     grid-template-columns: 1fr;
   }
 }

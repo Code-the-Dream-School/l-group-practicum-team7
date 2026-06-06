@@ -14,6 +14,7 @@ import toolDefinitions from '../assets/tools/toolDefinitions';
 import './ToolsPage.css';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const STORAGE_PREFIX = 'pulsemind';
 
 const toolIcons = {
   breathing: Wind,
@@ -91,8 +92,191 @@ function formatTimer(seconds) {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split('.')[1];
+
+    if (!payload) {
+      return null;
+    }
+
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(
+      Math.ceil(normalized.length / 4) * 4,
+      '='
+    );
+
+    return JSON.parse(window.atob(padded));
+  } catch (e) {
+    return null;
+  }
+}
+
+function sanitizeStoragePart(value) {
+  return String(value || 'unknown')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '_');
+}
+
+function getCurrentUserScope() {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    return 'guest';
+  }
+
+  const payload = decodeJwtPayload(token);
+  const userKey =
+    payload?.userId ||
+    payload?.id ||
+    payload?._id ||
+    payload?.user?.userId ||
+    payload?.user?.id ||
+    payload?.user?._id ||
+    payload?.user?.email ||
+    payload?.user?.username ||
+    payload?.sub ||
+    payload?.email ||
+    payload?.username;
+
+  if (userKey) {
+    return String(userKey);
+  }
+
+  try {
+    const storedUser = JSON.parse(
+      localStorage.getItem('user') ||
+        localStorage.getItem('currentUser') ||
+        localStorage.getItem('authUser') ||
+        localStorage.getItem('sessionUser') ||
+        localStorage.getItem('profile') ||
+        localStorage.getItem('pulsemindUser') ||
+        'null'
+    );
+
+    const storedUserKey =
+      storedUser?.userId ||
+      storedUser?.id ||
+      storedUser?._id ||
+      storedUser?.email ||
+      storedUser?.username;
+
+    if (storedUserKey) {
+      return String(storedUserKey);
+    }
+  } catch (e) {}
+
+  return sanitizeStoragePart(token.slice(-24));
+}
+
+function getScopedStorageKey(name) {
+  return `${STORAGE_PREFIX}:${getCurrentUserScope()}:${name}`;
+}
+
+function getLegacyScopedStorageKey(name) {
+  return `${STORAGE_PREFIX}:${sanitizeStoragePart(getCurrentUserScope())}:${name}`;
+}
+
+function getUnlockedKey() {
+  return `unlockedTools:${getCurrentUserScope()}`;
+}
+
+function getLegacyUnlockedKey() {
+  return getScopedStorageKey('unlockedTools');
+}
+
+function getDialogueStateKey() {
+  return `dialogueState_v2:${getCurrentUserScope()}`;
+}
+
+function getSeenNodesKey() {
+  return getScopedStorageKey('seenNodes');
+}
+
 function getHistoryKey(toolId) {
-  return `tool:${toolId}:entries`;
+  return `toolHistory:${getCurrentUserScope()}:${toolId}`;
+}
+
+function getLegacyHistoryKeys(toolId) {
+  return Array.from(
+    new Set([
+      getScopedStorageKey(`tool:${toolId}:entries`),
+      getLegacyScopedStorageKey(`tool:${toolId}:entries`),
+      `tool:${toolId}:entries`,
+    ])
+  );
+}
+
+function getAggregateToolHistoryKey() {
+  return `toolHistory:${getCurrentUserScope()}`;
+}
+
+function readJsonArray(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function readToolHistoryMap() {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(getAggregateToolHistoryKey()) || '{}'
+    );
+
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? value
+      : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeToolHistoryMap(toolId, entries) {
+  const current = readToolHistoryMap();
+  localStorage.setItem(
+    getAggregateToolHistoryKey(),
+    JSON.stringify({
+      ...current,
+      [toolId]: entries,
+    })
+  );
+}
+
+function clearLegacyToolStorage() {
+  localStorage.removeItem('unlockedTools');
+  localStorage.removeItem('dialogueState_v1');
+  localStorage.removeItem('seenNodes');
+
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith('tool:') && key.endsWith(':entries'))
+    .forEach((key) => localStorage.removeItem(key));
+}
+
+function clearCurrentUserToolStorage() {
+  localStorage.removeItem(getUnlockedKey());
+  localStorage.removeItem(getLegacyUnlockedKey());
+  localStorage.removeItem(getLegacyScopedStorageKey('unlockedTools'));
+  localStorage.removeItem(getDialogueStateKey());
+  localStorage.removeItem(`dialogueState_v1:${getCurrentUserScope()}`);
+  localStorage.removeItem(getSeenNodesKey());
+  localStorage.removeItem(getAggregateToolHistoryKey());
+
+  const scopePrefix = `${STORAGE_PREFIX}:${getCurrentUserScope()}:`;
+  const legacyScopePrefix = `${STORAGE_PREFIX}:${sanitizeStoragePart(getCurrentUserScope())}:`;
+
+  Object.keys(localStorage)
+    .filter(
+      (key) =>
+        ((key.startsWith(scopePrefix) || key.startsWith(legacyScopePrefix)) &&
+          key.includes(':tool:') &&
+          key.endsWith(':entries')) ||
+        key.startsWith(`toolHistory:${getCurrentUserScope()}:`)
+    )
+    .forEach((key) => localStorage.removeItem(key));
 }
 
 export default function ToolsPage() {
@@ -106,6 +290,7 @@ export default function ToolsPage() {
   const [priorityRows, setPriorityRows] = useState([]);
   const [historyEntries, setHistoryEntries] = useState([]);
   const [savedMessage, setSavedMessage] = useState('');
+
   const activeDefinition = activeToolId ? toolDefinitions[activeToolId] : null;
   const activeType = getToolType(activeDefinition);
   const activeInstruction = activeDefinition?.instruction || '';
@@ -116,23 +301,38 @@ export default function ToolsPage() {
     let mounted = true;
 
     async function loadUnlocked() {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        if (mounted) {
+          setUnlocked([]);
+        }
+
+        return;
+      }
+
       let localKeys = [];
 
       try {
-        const raw = JSON.parse(localStorage.getItem('unlockedTools') || '[]');
-        localKeys = extractUnlockedToolIds(raw);
+        const rawKeys = [
+          getUnlockedKey(),
+          getLegacyUnlockedKey(),
+          getLegacyScopedStorageKey('unlockedTools'),
+        ];
+
+        localKeys = Array.from(
+          new Set(
+            rawKeys.flatMap((key) =>
+              extractUnlockedToolIds(readJsonArray(key))
+            )
+          )
+        );
 
         if (mounted) {
           setUnlocked(localKeys);
         }
       } catch (e) {
         localKeys = [];
-      }
-
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        return;
       }
 
       try {
@@ -154,30 +354,50 @@ export default function ToolsPage() {
         const backendKeys = extractUnlockedToolIds(backendRaw);
         const mergedKeys = Array.from(new Set([...localKeys, ...backendKeys]));
 
+        localStorage.setItem(getUnlockedKey(), JSON.stringify(mergedKeys));
+        localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(mergedKeys));
+
         if (mounted) {
           setUnlocked(mergedKeys);
         }
       } catch (e) {}
     }
 
-    loadUnlockedTools();
+    loadUnlocked();
+    
+    const handler = (e) => {
+      const token = localStorage.getItem('token');
 
-    const handler = (event) => {
+      if (!token) {
+        setUnlocked([]);
+        return;
+      }
+
       try {
-        const raw =
-          e?.detail?.unlockedTools ||
-          JSON.parse(localStorage.getItem('unlockedTools') || '[]');
+        if (Array.isArray(e?.detail?.unlockedTools)) {
+          const ids = extractUnlockedToolIds(e.detail.unlockedTools);
 
-        setUnlocked(extractUnlockedToolIds(raw));
-      } catch (e) {
+          localStorage.setItem(getUnlockedKey(), JSON.stringify(ids));
+          localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(ids));
+          setUnlocked(ids);
+          return;
+        }
+
+        const raw = readJsonArray(getUnlockedKey());
+        const legacy = readJsonArray(getLegacyUnlockedKey());
+        setUnlocked(extractUnlockedToolIds([...raw, ...legacy]));
+      } catch (err) {
         setUnlocked([]);
       }
     };
 
-    window.addEventListener("dialogueStateUpdate", handler);
+    window.addEventListener('dialogueStateUpdate', handler);
+    window.addEventListener('authChanged', loadUnlocked);
 
     return () => {
-      window.removeEventListener("dialogueStateUpdate", handler);
+      mounted = false;
+      window.removeEventListener('dialogueStateUpdate', handler);
+      window.removeEventListener('authChanged', loadUnlocked);
     };
   }, []);
 
@@ -202,11 +422,25 @@ export default function ToolsPage() {
   }, [timerRunning, timerSec]);
 
   function loadHistory(toolId) {
-    try {
-      return JSON.parse(localStorage.getItem(getHistoryKey(toolId)) || '[]');
-    } catch (e) {
-      return [];
-    }
+    const canonical = readJsonArray(getHistoryKey(toolId));
+    const aggregate = readToolHistoryMap()[toolId] || [];
+    const legacy = getLegacyHistoryKeys(toolId).flatMap((key) =>
+      readJsonArray(key)
+    );
+
+    const merged = [...canonical, ...aggregate, ...legacy];
+    const seen = new Set();
+
+    return merged.filter((entry) => {
+      const signature = JSON.stringify(entry);
+
+      if (seen.has(signature)) {
+        return false;
+      }
+
+      seen.add(signature);
+      return true;
+    });
   }
 
   function saveEntry(toolId, payload) {
@@ -218,6 +452,7 @@ export default function ToolsPage() {
     ];
 
     localStorage.setItem(key, JSON.stringify(nextEntries));
+    writeToolHistoryMap(toolId, nextEntries);
     setHistoryEntries(nextEntries);
   }
 
@@ -254,13 +489,8 @@ export default function ToolsPage() {
   }
 
   function resetUnlockedTools() {
-    localStorage.removeItem('unlockedTools');
-    localStorage.removeItem('dialogueState_v1');
-    localStorage.removeItem('seenNodes');
-
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith('tool:') && key.endsWith(':entries'))
-      .forEach((key) => localStorage.removeItem(key));
+    clearCurrentUserToolStorage();
+    clearLegacyToolStorage();
 
     setUnlocked([]);
     setActiveToolId(null);
@@ -271,6 +501,7 @@ export default function ToolsPage() {
     setFieldValues({});
     setPriorityRows([]);
     setHistoryEntries([]);
+    setSavedMessage('');
 
     window.dispatchEvent(
       new CustomEvent('dialogueStateUpdate', {
@@ -290,7 +521,8 @@ export default function ToolsPage() {
       unlockedAt: new Date().toISOString(),
     }));
 
-    localStorage.setItem('unlockedTools', JSON.stringify(allTools));
+    localStorage.setItem(getUnlockedKey(), JSON.stringify(allTools));
+    localStorage.setItem(getLegacyUnlockedKey(), JSON.stringify(allTools));
     setUnlocked(allTools.map((tool) => tool.key));
 
     window.dispatchEvent(
@@ -563,6 +795,8 @@ export default function ToolsPage() {
           </button>
         </div>
 
+        {savedMessage && <p className="tool-saved-message">{savedMessage}</p>}
+
         {renderHistory()}
       </div>
     );
@@ -586,6 +820,8 @@ export default function ToolsPage() {
           >
             Save Reflection
           </button>
+
+          {savedMessage && <p className="tool-saved-message">{savedMessage}</p>}
         </div>
 
         {renderHistory()}
@@ -655,10 +891,6 @@ export default function ToolsPage() {
       {unlocked.length === 0 && (
         <div className="tools-empty-state">
           <p>No tools unlocked yet. You can unlock tools via the Novel choices.</p>
-          <p>To seed a tool for testing, run in console:</p>
-          <pre>
-            localStorage.setItem("unlockedTools", JSON.stringify(["thought_dump"]))
-          </pre>
         </div>
       )}
 

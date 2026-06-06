@@ -1,103 +1,104 @@
-# Project Name
+# PulseMind
 
-Short, clear description of what this application does and who it’s for.  
-(1–2 sentences max.)
+PulseMind is a full-stack burnout tracking and wellness companion that helps users notice early signs of emotional and physical exhaustion. The app monitors stress, workload, sleep, and energy, then turns those daily signals into insights, dialogue guidance, and reflection tools.
 
-**Example:**  
-A full-stack web application with a React frontend and a Node/Express backend that allows users to create, manage, and track data stored in a database.
+## Project Purpose
 
-## 🚀 Live Demo
+Burnout often builds gradually before it becomes obvious. PulseMind is designed for students, workers, and anyone balancing daily responsibilities who wants a practical way to track their state and respond before exhaustion becomes severe.
 
-- **Frontend Live Site:** https://your-frontend-url.com  
-- **Frontend Repo:** /frontend  
-- **Backend Repo:** /backend
+The project focuses on prevention: users log a short daily check-in, review patterns over time, and receive recommendations that connect their data to small actions they can take.
 
-## 🧠 Problem Statement
+## Features
 
-What problem does this project solve?
+- User authentication with register, login, logout, and protected API routes
+- Daily entry tracking for stress, workload, sleep hours, and energy
+- Burnout score calculation and risk classification
+- Dashboard summaries for current burnout risk, trends, averages, and additional signals
+- History view for reviewing previous daily entries
+- Mascot dialogue system that recommends conversation branches based on recent patterns
+- Reflection tools unlocked through dialogue choices
+- User-specific tool history and local storage isolation
+- Subscription/demo checkout flow for premium status
+- Responsive frontend UI for desktop and mobile layouts
 
-- Who is this application for?
-- What pain point does it address?
-- Why does this solution matter?
+## Key Wellness Areas
 
-Focus on the **user problem**, not the technology.
+- **Vital Tracking:** monitor stress, sleep, workload, and energy over time.
+- **Workload Management:** identify when daily responsibilities are becoming too heavy.
+- **Smart Recommendations:** receive personalized prompts and actions based on recent entries.
+- **Preventative Analytics:** review visual trends and averages before burnout escalates.
+- **Dialogue Support:** talk through stress, workload, sleep deprivation, and low energy with a mascot-guided flow.
+- **Reflection Tools:** use short writing, planning, grounding, breathing, and recovery exercises.
 
-## 🎯 Features
-
-- User authentication (register, login, logout)
-- CRUD operations for core resources
-- Protected routes and authorization
-- Responsive UI (mobile & desktop)
-- Form validation and error handling
-- RESTful API integration
-
-## 📸 Screenshots
-
-Add screenshots or GIFs of key features here.
-
-
-
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
+
 - React
-- JavaScript (ES6+)
-- HTML5
-- CSS3 / Tailwind / Bootstrap
-- Vite or Create React App
+- JavaScript / TypeScript
+- Vite
+- CSS
+- Lucide React icons
 
 ### Backend
+
 - Node.js
 - Express.js
 - REST API
+- JWT authentication
 
 ### Database
-- MongoDB (Mongoose) **or**
-- PostgreSQL (Prisma / Knex / Sequelize)
+
+- MongoDB
+- Mongoose
 
 ### Tooling
-- Git & GitHub
-- dotenv (environment variables)
-- ESLint / Prettier
 
-## 📁 Project Structure
+- npm
+- dotenv
+- Git / GitHub
+
+## Project Structure
 
 ```text
 project-root/
-├── frontend/
+├── backend/
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── services/        
-│   │   ├── styles/
-│   │   ├── utils/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
+│   │   ├── controllers/
+│   │   ├── errors/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── app.js
+│   │   └── server.js
+│   ├── tests/
 │   └── package.json
 │
-├── backend/
-│   ├── controllers/
-│   ├── routes/
-│   ├── models/
-│   ├── middleware/
-│   ├── config/
-│   ├── app.js
-│   ├── server.js
+├── frontend/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── App.css
+│   │   └── main.jsx
+│   ├── index.html
 │   └── package.json
 │
 └── README.md
 ```
 
-## ⚙️ Setup & Installation
+## Setup
 
 ### Prerequisites
-- Node.js (v18+ recommended)
-- npm or yarn
-- MongoDB or PostgreSQL (local or cloud)
 
-### Backend Setup
+- Node.js 18+
+- npm
+- MongoDB connection string
+
+### Backend
 
 ```bash
 cd backend
@@ -105,18 +106,21 @@ npm install
 npm run dev
 ```
 
-Create a `.env` file inside the `backend` folder:
+Create a `.env` file in `backend/`:
 
 ```env
-PORT=5000
-DATABASE_URL=your_database_url
-JWT_SECRET=your_secret_key
+PORT=8080
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
 ```
 
-Backend runs on:  
-http://localhost:8080
+Backend default URL:
 
-### Frontend Setup
+```text
+http://localhost:8080
+```
+
+### Frontend
 
 ```bash
 cd frontend
@@ -124,77 +128,68 @@ npm install
 npm run dev
 ```
 
-Frontend runs on:  
-http://localhost:5173
+Optional frontend `.env`:
 
-## 🧪 Available Scripts
-
-### Frontend
-```bash
-npm run dev
-npm run build
-npm run preview
+```env
+VITE_API_BASE=http://localhost:8080
 ```
 
-### Backend
-```bash
-npm run dev
-npm start
-```
-
-## 🔐 API Overview
-
-### Example Endpoints
+Frontend default URL:
 
 ```text
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/items
-POST   /api/items
-PUT    /api/items/:id
-DELETE /api/items/:id
+http://localhost:5173
 ```
 
-## 🤝 Team & Collaboration
+## API Overview
 
-### Team Members
-- Name — Role
-- Name — Role
-- Name — Role
+Common backend route groups include:
 
-### Workflow
-- GitHub Issues for task tracking
-- Feature branches for development
-- Pull Requests required for all merges
-- Code reviews before merging to `main`
+```text
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/me
 
+GET    /api/entries
+POST   /api/entries
+DELETE /api/entries/:id
 
-## 🧩 Development Process
+GET /api/insights
 
-- Agile / sprint-based workflow
-- Backend API built before frontend integration
-- MVP defined early
-- Incremental feature development
+GET  /api/dialogues/available
+GET  /api/dialogues/tools
+POST /api/dialogues/tools/unlock
 
-## 📌 Known Issues / Limitations
+GET  /api/subscription/me
+POST /api/subscription/demo-checkout
+POST /api/subscription/demo-reset
+```
 
-- Limited role-based access control
-- No automated tests yet
-- Performance optimizations pending
+Some endpoint names may vary slightly depending on the active backend branch. Check `backend/src/routes/` for the source of truth.
 
-## 🛣 Future Improvements
+## Development Notes
 
-- Add automated testing (Jest, Supertest)
-- Improve security and validation
-- Add caching and performance improvements
-- Dockerize the application
+- Do not use production or development MongoDB data for automated tests.
+- Keep user-specific dialogue and tool data isolated by account.
+- The frontend stores some dialogue/tool state locally for responsiveness, but premium status and protected data should be confirmed by the backend.
+- Dialogue branches unlock reflection tools and should avoid replaying completed non-repeatable tool unlocks.
 
-## 🙌 Acknowledgments
+## Team
 
-- Mentors
-- Instructors
-- Open-source libraries and tools
+- Alikhan Amanzhanov
+- Eric Vasquez-Reyes
+- Mauricio
+- Natalia Novikova
+- Tegegnwork Checol
 
-## 📄 License
+## Future Improvements
 
-This project is for educational purposes only.
+- Expand automated backend and frontend test coverage
+- Improve validation and error consistency across API routes
+- Add more advanced user-specific dialogue memory
+- Improve accessibility and keyboard navigation
+- Add deployment documentation
+- Add pet feature
+
+## License
+
+This project is for educational purposes.
