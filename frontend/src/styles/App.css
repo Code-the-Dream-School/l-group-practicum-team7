@@ -758,6 +758,16 @@ a {
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
 }
 
+.history-edit {
+  background: #eef0ff;
+  color: #5b50ee;
+}
+
+.history-delete {
+  background: #ffe3e3;
+  color: #ff3b3b;
+}
+
 .history-card-header {
   display: flex;
   justify-content: space-between;
@@ -783,6 +793,141 @@ a {
   color: #64748b;
   font-size: 13px;
   margin-bottom: 4px;
+}
+
+.history-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.history-action-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 1;
+  visibility: visible;
+}
+
+.history-action-button svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.history-edit-button {
+  background: #eef0ff;
+  color: #5b50ee;
+}
+
+.history-save {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.history-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.history-delete {
+  background: #ffe3e3;
+  color: #ff3b3b;
+}
+
+.history-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.history-edit-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.history-edit-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.history-edit-form label span {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.history-edit-form input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  outline: none;
+}
+
+.history-edit-form input:focus {
+  border-color: #5b50ee;
+  box-shadow: 0 0 0 3px rgba(91, 80, 238, 0.14);
+}
+
+.history-edit-error {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffe3e3;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .history-edit-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .history-card-header {
+    align-items: flex-start;
+  }
+
+  .history-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .history-card-actions {
+    gap: 8px;
+  }
+
+  .history-action-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 14px;
+  }
 }
 
 .profile-card {

@@ -113,34 +113,52 @@ const updateEntry = async (req, res) => {
     workload < 1 ||
     workload > 5 ||
     energy < 1 ||
-    energy > 5
+    energy > 5 ||
+    sleepHours == null ||
+    sleepHours < 0 ||
+    sleepHours > 24
   ) {
     throw new BadRequestError("Invalid input values");
   }
 
-  const normalizedSleep = Math.min(Number(sleepHours), 8);
+  const updatePayload = {
+    stress: Number(stress),
+    workload: Number(workload),
+    sleepHours: Number(sleepHours),
+    energy: Number(energy),
+  };
+
+  const normalizedSleep = Math.min(updatePayload.sleepHours, 8);
   const sleepScore = getSleepScore(normalizedSleep);
 
   const { score, level } = calculateBurnout({
-    stress,
-    workload,
+    stress: updatePayload.stress,
+    workload: updatePayload.workload,
     sleepScore,
-    energy,
+    energy: updatePayload.energy,
   });
+
+  if (date) {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      throw new BadRequestError("Invalid date value");
+    }
+
+    updatePayload.date = parsedDate;
+  }
 
   const updated = await Entry.findOneAndUpdate(
     { _id: id, userId },
     {
-      stress,
-      workload,
-      sleepHours,
+      ...updatePayload,
       sleepScore,
-      energy,
       burnoutScore: score,
       burnoutLevel: level,
     },
     { new: true, runValidators: true },
   );
+
   if (!updated) {
     throw new NotFoundError("Entry not found");
   }
