@@ -101,6 +101,8 @@ if (!isProduction) {
   });
 }
 
+app.use("/api", notFoundMiddleware);
+
 if (isProduction) {
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));

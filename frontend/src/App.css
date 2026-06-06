@@ -19,8 +19,6 @@
   color: #333;
 }
 
-/* Shared mobile pages */
-
 .mobile-page {
   min-height: 100%;
   padding: 28px 18px 120px;
@@ -62,7 +60,6 @@
   line-height: 1.45;
 }
 
-/* History page */
 
 .history-filters {
   width: min(100%, 980px);
@@ -230,8 +227,6 @@
   background: #fee2e2;
   color: #991b1b;
 }
-
-/* Profile page */
 
 .profile-page {
   display: block;
@@ -415,8 +410,6 @@
 .profile-logout:hover {
   background: #dc2626;
 }
-
-/* Responsive */
 
 @media (max-width: 760px) {
   .compact-page-shell {
