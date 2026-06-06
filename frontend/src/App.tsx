@@ -385,23 +385,36 @@ function App(): React.ReactElement {
   }, [loadDashboardData, resetDashboardData, syncPremiumStatus]);
 
   useEffect(() => {
-  if (checking) {
-    return;
-  }
+    if (checking) {
+      return;
+    }
 
-  const applyCurrentPath = () => {
-    const routeFromPath = pathToDrawerRoute(window.location.pathname);
-    handleDrawerNavigate(routeFromPath, false);
-  };
+    const applyCurrentPath = () => {
+      const routeFromPath = pathToDrawerRoute(window.location.pathname);
 
-  applyCurrentPath();
+      // Prevent automatically opening auth or protected routes on initial load —
+      // always show landing first for unauthenticated visitors. Allow public
+      // pages like 'about' to be reachable without forcing the landing.
+      if (!user && routeFromPath !== 'about') {
+        setRoute('landing');
+        try {
+          window.history.replaceState({}, '', '/');
+        } catch {}
 
-  window.addEventListener('popstate', applyCurrentPath);
+        return;
+      }
 
-  return () => {
-    window.removeEventListener('popstate', applyCurrentPath);
-  };
-}, [checking, user]);
+      handleDrawerNavigate(routeFromPath, false);
+    };
+
+    applyCurrentPath();
+
+    window.addEventListener('popstate', applyCurrentPath);
+
+    return () => {
+      window.removeEventListener('popstate', applyCurrentPath);
+    };
+  }, [checking, user]);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -635,7 +648,6 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
           onStartHere={() => {
             setAuthMode("register");
             setShowAuth(true);
-            setRoute("auth");
           }}
         />
       )}

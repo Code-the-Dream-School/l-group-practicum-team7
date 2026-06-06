@@ -886,25 +886,11 @@ export default function ToolsPage() {
           <h1>PulseMind Tools</h1>
           <p>Tools recommended based on your emotional state.</p>
         </div>
-
-        <div className="tools-admin-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={resetUnlockedTools}
-          >
-            Reset my tools
-          </button>
-        </div>
       </div>
 
       {unlocked.length === 0 && (
         <div className="tools-empty-state">
           <p>No tools unlocked yet. You can unlock tools via the Novel choices.</p>
-          <p>To seed a tool for testing, run in console:</p>
-          <pre>
-            window.dispatchEvent(new CustomEvent('dialogueStateUpdate', &#123; detail: &#123; unlockedTools: ['thought_dump'] &#125; &#125;))
-          </pre>
         </div>
       )}
 

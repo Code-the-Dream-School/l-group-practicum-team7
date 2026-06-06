@@ -34,7 +34,7 @@ function AppHeader({ onEntryCreated }: AppHeaderProps) {
 
     console.log('Send to backend:', payload);
 
-    const response = await fetch(`http://localhost:8080/api/entries`, {
+    const response = await fetch(`${API}/api/entries`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
