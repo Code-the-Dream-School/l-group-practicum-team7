@@ -61,7 +61,7 @@ export default function About() {
         <ul className="team-list">
           <li>Alikhan Amanzhanov</li>
           <li>Eric Vasquez-Reyes</li>
-          <li>Mauricio</li>
+          <li>Mauricio Morales</li>
           <li>Natalia Novikova</li>
           <li>Tegegnwork Checol</li>
         </ul>
