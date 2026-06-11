@@ -34,6 +34,10 @@ const SubscriptionSchema = new mongoose.Schema(
       type: String,
       default: 'USD',
     },
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
     paymentBrand: String,
     paymentLast4: String,
   },

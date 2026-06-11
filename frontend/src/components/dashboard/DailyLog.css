@@ -13,7 +13,6 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Overlay blur */
 .daily-log-overlay {
   position: fixed;
   inset: 0;
@@ -27,7 +26,6 @@
   padding: 16px;
 }
 
-/*Log card with internal scroll small screens */
 .daily-log-card {
   background: var(--pm-white);
   width: 100%;
@@ -50,7 +48,6 @@
   }
 }
 
-/* form scroll */
 .daily-log-scroll-area {
   overflow-y: auto;
   padding-right: 8px;
@@ -182,7 +179,6 @@
   letter-spacing: 0.05em;
 }
 
-/* save- responsive */
 .daily-log-save-button {
   width: 100%;
   background-color: var(--pm-primary);

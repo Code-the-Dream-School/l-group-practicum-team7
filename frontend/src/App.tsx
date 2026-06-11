@@ -7,6 +7,7 @@ import NovelPage from "./pages/NovelPage";
 import HomePage from "./pages/Home";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutPageSuccess from "./pages/CheckoutPageSuccess";
+import NotFoundPage from "./pages/NotFoundPage";
 
 import AppHeader from "./components/Layout/AppHeader";
 import RightNavDrawer, { type DrawerRoute } from "./components/Layout/RightNavDrawer";
@@ -37,7 +38,8 @@ type Route =
   | "insights"
   | "landing"
   | "checkout"
-  | "checkout_success";
+  | "checkout_success"
+  | "notFound";
 
 type User = {
   token?: string;
@@ -51,48 +53,51 @@ type User = {
 };
 
 type MeResponse = Record<string, unknown>;
+type ResolvedPathRoute = DrawerRoute | "landing" | "notFound";
 
 const drawerRouteToPath: Partial<Record<DrawerRoute, string>> = {
-  backend: '/dashboard',
-  today: '/dashboard',
-  home: '/dashboard',
-  history: '/history',
-  dialogues: '/dialogues',
-  novel: '/dialogues',
-  tools: '/tools',
-  profile: '/profile',
-  about: '/about',
-  checkout: '/checkout',
-  checkout_success: '/checkout/success',
-  auth: '/auth',
+  backend: "/dashboard",
+  today: "/dashboard",
+  home: "/dashboard",
+  history: "/history",
+  dialogues: "/dialogues",
+  novel: "/dialogues",
+  tools: "/tools",
+  profile: "/profile",
+  about: "/about",
+  checkout: "/checkout",
+  checkout_success: "/checkout/success",
+  auth: "/auth",
 };
 
-function pathToDrawerRoute(pathname: string): DrawerRoute {
-  if (pathname.startsWith('/history')) return 'history';
-  if (pathname.startsWith('/dialogues')) return 'dialogues';
-  if (pathname.startsWith('/tools')) return 'tools';
-  if (pathname.startsWith('/profile')) return 'profile';
-  if (pathname.startsWith('/about')) return 'about';
-  if (pathname.startsWith('/checkout/success')) return 'checkout_success';
-  if (pathname.startsWith('/checkout')) return 'checkout';
-  if (pathname.startsWith('/auth')) return 'auth';
+function pathToAppRoute(pathname: string): ResolvedPathRoute {
+  if (pathname === "/") return "landing";
+  if (pathname === "/dashboard") return "backend";
+  if (pathname === "/history") return "history";
+  if (pathname === "/dialogues") return "dialogues";
+  if (pathname === "/tools") return "tools";
+  if (pathname === "/profile") return "profile";
+  if (pathname === "/about") return "about";
+  if (pathname === "/checkout/success") return "checkout_success";
+  if (pathname === "/checkout") return "checkout";
+  if (pathname === "/auth") return "auth";
 
-  return 'backend';
+  return "notFound";
 }
 
 function updateBrowserPath(route: DrawerRoute, replace = false) {
-  const nextPath = drawerRouteToPath[route] || '/dashboard';
+  const nextPath = drawerRouteToPath[route] || "/dashboard";
 
   if (window.location.pathname === nextPath) {
     return;
   }
 
   if (replace) {
-    window.history.replaceState({}, '', nextPath);
+    window.history.replaceState({}, "", nextPath);
     return;
   }
 
-  window.history.pushState({}, '', nextPath);
+  window.history.pushState({}, "", nextPath);
 }
 
 function getArrayFromResponse(data: unknown, keys: string[]) {
@@ -262,6 +267,139 @@ function App(): React.ReactElement {
     }
   }, []);
 
+  const goToDashboardTab = useCallback((tab: MobileTab) => {
+    setRoute("backend");
+    setMobileTab(tab);
+  }, []);
+
+  const goToDashboard = useCallback((shouldPush = true) => {
+    setRoute("backend");
+    setMobileTab("today");
+
+    if (shouldPush) {
+      updateBrowserPath("backend");
+    }
+  }, []);
+
+  const handleNovelNavigate = useCallback(
+    (nextRoute: string) => {
+      if (nextRoute === "dashboard" || nextRoute === "today" || nextRoute === "entries") {
+        goToDashboard(true);
+        return;
+      }
+
+      if (nextRoute === "tools") {
+        setRoute("tools");
+        updateBrowserPath("tools");
+        return;
+      }
+
+      if (nextRoute === "dialogues" || nextRoute === "novel") {
+        setRoute("dialogues");
+        updateBrowserPath("dialogues");
+      }
+    },
+    [goToDashboard],
+  );
+
+  function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
+    const token = localStorage.getItem("token");
+
+    if (!user && !token && nextRoute !== "about") {
+      setPendingRoute(
+        nextRoute === "history" ||
+          nextRoute === "profile" ||
+          nextRoute === "backend" ||
+          nextRoute === "today" ||
+          nextRoute === "home"
+          ? "backend"
+          : nextRoute,
+      );
+
+      setAuthMode("login");
+      setShowAuth(true);
+      setRoute("auth");
+
+      if (shouldPush) {
+        updateBrowserPath("auth");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "backend" || nextRoute === "today" || nextRoute === "home") {
+      setRoute("backend");
+      setMobileTab("today");
+
+      if (shouldPush) {
+        updateBrowserPath("backend");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "history") {
+      setRoute("backend");
+      setMobileTab("history");
+
+      if (shouldPush) {
+        updateBrowserPath("history");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "profile") {
+      setRoute("backend");
+      setMobileTab("profile");
+
+      if (shouldPush) {
+        updateBrowserPath("profile");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "about") {
+      setRoute("backend");
+      setMobileTab("info");
+
+      if (shouldPush) {
+        updateBrowserPath("about");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "dialogues" || nextRoute === "novel") {
+      setRoute("dialogues");
+
+      if (shouldPush) {
+        updateBrowserPath("dialogues");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "tools") {
+      setRoute("tools");
+
+      if (shouldPush) {
+        updateBrowserPath("tools");
+      }
+
+      return;
+    }
+
+    if (nextRoute === "checkout" || nextRoute === "checkout_success") {
+      setRoute(nextRoute);
+
+      if (shouldPush) {
+        updateBrowserPath(nextRoute);
+      }
+    }
+  }
+
   useEffect(() => {
     const onOpenTools = () => {
       const token = localStorage.getItem("token");
@@ -271,10 +409,16 @@ function App(): React.ReactElement {
         setAuthMode("login");
         setShowAuth(true);
         setRoute("auth");
+        updateBrowserPath("auth");
         return;
       }
 
       setRoute("tools");
+      updateBrowserPath("tools");
+    };
+
+    const onOpenDashboard = () => {
+      goToDashboard(true);
     };
 
     const onOpenCheckout = () => {
@@ -285,10 +429,12 @@ function App(): React.ReactElement {
         setAuthMode("login");
         setShowAuth(true);
         setRoute("auth");
+        updateBrowserPath("auth");
         return;
       }
 
       setRoute("checkout");
+      updateBrowserPath("checkout");
     };
 
     const onCheckoutSuccess = async (event: Event) => {
@@ -297,18 +443,21 @@ function App(): React.ReactElement {
       setLastOrderId(customEvent.detail?.orderId || "");
       await syncPremiumStatus();
       setRoute("checkout_success");
+      updateBrowserPath("checkout_success");
     };
 
     window.addEventListener("openTools", onOpenTools);
+    window.addEventListener("openDashboard", onOpenDashboard);
     window.addEventListener("openCheckout", onOpenCheckout);
     window.addEventListener("checkoutSuccess", onCheckoutSuccess);
 
     return () => {
       window.removeEventListener("openTools", onOpenTools);
+      window.removeEventListener("openDashboard", onOpenDashboard);
       window.removeEventListener("openCheckout", onOpenCheckout);
       window.removeEventListener("checkoutSuccess", onCheckoutSuccess);
     };
-  }, [syncPremiumStatus]);
+  }, [goToDashboard, syncPremiumStatus]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -322,9 +471,24 @@ function App(): React.ReactElement {
       setIsPremium(false);
       resetDashboardData();
       setChecking(false);
-      setRoute("landing");
       setAuthMode("login");
       setShowAuth(false);
+
+      const routeFromPath = pathToAppRoute(window.location.pathname);
+
+      if (routeFromPath === "landing") {
+        setRoute("landing");
+      } else if (routeFromPath === "about") {
+        setRoute("backend");
+        setMobileTab("info");
+      } else if (routeFromPath === "notFound") {
+        setRoute("notFound");
+      } else {
+        setRoute("landing");
+        try {
+          window.history.replaceState({}, "", "/");
+        } catch {}
+      }
 
       return () => {
         controller.abort();
@@ -350,8 +514,18 @@ function App(): React.ReactElement {
         }
 
         setUser({ ...userData, token });
-        setRoute("backend");
-        setMobileTab("today");
+
+        const routeFromPath = pathToAppRoute(window.location.pathname);
+
+        if (routeFromPath === "landing") {
+          setRoute("backend");
+          setMobileTab("today");
+          updateBrowserPath("backend", true);
+        } else if (routeFromPath === "notFound") {
+          setRoute("notFound");
+        } else {
+          handleDrawerNavigate(routeFromPath, false);
+        }
 
         void loadDashboardData(token);
         void syncPremiumStatus(token);
@@ -369,7 +543,18 @@ function App(): React.ReactElement {
         setIsPremium(false);
         setPendingRoute(null);
         resetDashboardData();
-        setRoute("landing");
+
+        const routeFromPath = pathToAppRoute(window.location.pathname);
+
+        if (routeFromPath === "notFound") {
+          setRoute("notFound");
+        } else {
+          setRoute("landing");
+          try {
+            window.history.replaceState({}, "", "/");
+          } catch {}
+        }
+
         setAuthMode("login");
         setShowAuth(false);
       })
@@ -390,17 +575,37 @@ function App(): React.ReactElement {
     }
 
     const applyCurrentPath = () => {
-      const routeFromPath = pathToDrawerRoute(window.location.pathname);
+      const routeFromPath = pathToAppRoute(window.location.pathname);
 
-      // Prevent automatically opening auth or protected routes on initial load —
-      // always show landing first for unauthenticated visitors. Allow public
-      // pages like 'about' to be reachable without forcing the landing.
-      if (!user && routeFromPath !== 'about') {
-        setRoute('landing');
-        try {
-          window.history.replaceState({}, '', '/');
-        } catch {}
+      if (routeFromPath === "notFound") {
+        setRoute("notFound");
+        return;
+      }
 
+      if (routeFromPath === "landing") {
+        if (user) {
+          goToDashboard(false);
+        } else {
+          setRoute("landing");
+        }
+
+        return;
+      }
+
+      if (!user && routeFromPath !== "about") {
+        setPendingRoute(
+          routeFromPath === "history" ||
+            routeFromPath === "profile" ||
+            routeFromPath === "backend" ||
+            routeFromPath === "today" ||
+            routeFromPath === "home"
+            ? "backend"
+            : routeFromPath,
+        );
+
+        setAuthMode("login");
+        setShowAuth(true);
+        setRoute("auth");
         return;
       }
 
@@ -409,12 +614,12 @@ function App(): React.ReactElement {
 
     applyCurrentPath();
 
-    window.addEventListener('popstate', applyCurrentPath);
+    window.addEventListener("popstate", applyCurrentPath);
 
     return () => {
-      window.removeEventListener('popstate', applyCurrentPath);
+      window.removeEventListener("popstate", applyCurrentPath);
     };
-  }, [checking, user]);
+  }, [checking, user, goToDashboard]);
 
   const handleAuthed = (userData: User | null): void => {
     setUser(userData);
@@ -429,11 +634,28 @@ function App(): React.ReactElement {
     setShowAuth(false);
 
     if (pendingRoute) {
-      setRoute(pendingRoute);
+      if (pendingRoute === "backend") {
+        setRoute("backend");
+        setMobileTab("today");
+        updateBrowserPath("backend");
+      } else if (pendingRoute === "tools") {
+        setRoute("tools");
+        updateBrowserPath("tools");
+      } else if (pendingRoute === "dialogues" || pendingRoute === "novel") {
+        setRoute("dialogues");
+        updateBrowserPath("dialogues");
+      } else if (pendingRoute === "checkout") {
+        setRoute("checkout");
+        updateBrowserPath("checkout");
+      } else {
+        setRoute(pendingRoute);
+      }
+
       setPendingRoute(null);
     } else {
       setRoute("backend");
       setMobileTab("today");
+      updateBrowserPath("backend");
     }
   };
 
@@ -453,6 +675,10 @@ function App(): React.ReactElement {
     setRoute("landing");
     setAuthMode("login");
     setShowAuth(false);
+
+    try {
+      window.history.replaceState({}, "", "/");
+    } catch {}
 
     window.dispatchEvent(new Event("authChanged"));
   };
@@ -519,119 +745,18 @@ function App(): React.ReactElement {
     return "backend";
   }
 
-  function goToDashboardTab(tab: MobileTab) {
-    setRoute("backend");
-    setMobileTab(tab);
-  }
-
   function handleTodayNavigate(nextRoute: TodayNavigateTarget): void {
     if (nextRoute === "dialogues") {
       setRoute("dialogues");
+      updateBrowserPath("dialogues");
       return;
     }
 
     if (nextRoute === "tools") {
       setRoute("tools");
+      updateBrowserPath("tools");
     }
   }
-
-function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
-  const token = localStorage.getItem('token');
-
-  if (!user && !token && nextRoute !== 'about') {
-    setPendingRoute(
-      nextRoute === 'history' ||
-      nextRoute === 'profile' ||
-      nextRoute === 'backend' ||
-      nextRoute === 'today' ||
-      nextRoute === 'home'
-        ? 'backend'
-        : nextRoute,
-    );
-
-    setAuthMode('login');
-    setShowAuth(true);
-    setRoute('auth');
-
-    if (shouldPush) {
-      updateBrowserPath('auth');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'backend' || nextRoute === 'today' || nextRoute === 'home') {
-    setRoute('backend');
-    setMobileTab('today');
-
-    if (shouldPush) {
-      updateBrowserPath('backend');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'history') {
-    setRoute('backend');
-    setMobileTab('history');
-
-    if (shouldPush) {
-      updateBrowserPath('history');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'profile') {
-    setRoute('backend');
-    setMobileTab('profile');
-
-    if (shouldPush) {
-      updateBrowserPath('profile');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'about') {
-    setRoute('backend');
-    setMobileTab('info' as MobileTab);
-
-    if (shouldPush) {
-      updateBrowserPath('about');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'dialogues' || nextRoute === 'novel') {
-    setRoute('dialogues');
-
-    if (shouldPush) {
-      updateBrowserPath('dialogues');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'tools') {
-    setRoute('tools');
-
-    if (shouldPush) {
-      updateBrowserPath('tools');
-    }
-
-    return;
-  }
-
-  if (nextRoute === 'checkout' || nextRoute === 'checkout_success') {
-    setRoute(nextRoute);
-
-    if (shouldPush) {
-      updateBrowserPath(nextRoute);
-    }
-  }
-}
 
   if (checking) {
     return (
@@ -652,7 +777,11 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
         />
       )}
 
-      {route !== "landing" && (
+      {route === "notFound" && (
+        <NotFoundPage onNavigate={() => handleDrawerNavigate("backend")} />
+      )}
+
+      {route !== "landing" && route !== "notFound" && (
         <section className="app-shell">
           <AppHeader onEntryCreated={handleEntryCreated} />
 
@@ -662,10 +791,12 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
                 setLastOrderId(orderId);
                 await syncPremiumStatus();
                 setRoute("checkout_success");
+                updateBrowserPath("checkout_success");
               }}
               onCancel={() => {
                 setRoute("backend");
                 setMobileTab("profile");
+                updateBrowserPath("profile");
               }}
             />
           )}
@@ -676,6 +807,7 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
               onGoProfile={() => {
                 setMobileTab("profile");
                 setRoute("backend");
+                updateBrowserPath("profile");
               }}
             />
           )}
@@ -700,7 +832,10 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
                   user={user ?? undefined}
                   onLogout={handleLogout}
                   isPremium={isPremium}
-                  onOpenCheckout={() => setRoute("checkout")}
+                  onOpenCheckout={() => {
+                    setRoute("checkout");
+                    updateBrowserPath("checkout");
+                  }}
                 />
               )}
 
@@ -712,7 +847,7 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
 
           {!isCheckoutRoute &&
             route === "dialogues" &&
-            renderProtectedRoute(<NovelPage />)}
+            renderProtectedRoute(<NovelPage onNavigate={handleNovelNavigate} />)}
 
           {!isCheckoutRoute &&
             route === "tools" &&
@@ -730,7 +865,7 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
         </section>
       )}
 
-      {user && route !== "landing" && (
+      {user && route !== "landing" && route !== "notFound" && (
         <RightNavDrawer
           user={user}
           activeRoute={getDrawerActiveRoute()}
@@ -748,6 +883,10 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
 
             if (!user && route === "auth") {
               setRoute("landing");
+
+              try {
+                window.history.replaceState({}, "", "/");
+              } catch {}
             }
           }}
           onAuthed={handleAuthed}
@@ -758,5 +897,3 @@ function handleDrawerNavigate(nextRoute: DrawerRoute, shouldPush = true): void {
 }
 
 export default App;
-
-

@@ -694,7 +694,6 @@ a {
   stroke-width: 2.1;
 }
 
-/* buttons variant for mobile nav */
 .bottom-nav button {
   display: grid;
   place-items: center;
@@ -716,7 +715,6 @@ a {
   color: #5a4fe0;
 }
 
-/* page content styles for History/Profile */
 .page-content {
   padding: 24px;
   padding-bottom: 120px;
